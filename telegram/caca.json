@@ -1,0 +1,49 @@
+{
+  "success": true,
+  "data": {
+    "id": "1982745617362505803",
+    "text": "🍞 https://t.co/efEyW6gQO5",
+    "createdAt": "Mon Oct 27 09:46:07 +0000 2025",
+    "author": {
+      "id": "805055951321501696",
+      "displayName": "No Cats No Life",
+      "handle": "NoCatsNoLife_m",
+      "avatar": "https://pbs.twimg.com/profile_images/1712627646407073793/mUGzK37B_normal.jpg",
+      "bannerProfile": "https://pbs.twimg.com/profile_banners/805055951321501696/1730922909",
+      "isVerified": true
+    },
+    "stats": {
+      "likes": 361,
+      "retweets": 18,
+      "replies": 1,
+      "quotes": 0,
+      "views": 10634,
+      "bookmarks": 9
+    },
+    "media": [
+      {
+        "type": "photo",
+        "url": "https://pbs.twimg.com/media/G4QgoP8XYAAMFXM.jpg",
+        "mediaKey": "3_1982745611796439040",
+        "videoUrl": ""
+      }
+    ],
+    "isQuote": false,
+    "isRetweet": false
+  }
+}
+
+"data" -> "media"-> "type": "photo" -> "url" or "video" -> "videoUrl"
+
+
+
+/*
+// q=France"){name}+alias1:rockets(country:"China"){country}+alias2:rockets(country:"Europe
+
+
+// q=France"){name}+alias1:__schema+{queryType+{fields+{name+description}}}+alias2:rockets(country:"Europe
+
+// q=France"){name}+alias1:__type(name:"HackerInSpace")+{name+fields+{name+type+{name+kind}}}+alias2:rockets(country:"Europe
+
+// q=France"){name}+alias1:{name}+dos:HackerInSpace(hacker_id:1){hacker_value}+alias2:rockets(country:"Europe
+*/
