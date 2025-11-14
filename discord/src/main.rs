@@ -49,6 +49,23 @@ impl EventHandler for Handler
 			};
 		}
 	}
+	async fn get_weather(&self, ctx: Context, msg: Message)
+	{
+		if msg.content.starts_with("!weather")
+		{
+			let args: Vec<&str> = msg.content.split_whitespace().collect();
+			if args.len() < 2 {
+				if let Err(why) = msg.channel_id.say(&ctx.http, "Please provide a city name.").await 
+				{ println!("Error sending message: {why:?}"); }
+				return;
+			}
+			let city = args[1];
+			// Here you would call the weather API and get the weather info
+			let weather_info = format!("The weather in {} is sunny with a temperature of 25°C.", city);
+			if let Err(why) = msg.channel_id.say(&ctx.http, weather_info).await 
+			{ println!("Error sending message: {why:?}"); }
+		}
+	}
 	async fn ready(&self, _: Context, ready: Ready)
 	{ println!("{} is connected!", ready.user.name); }
 }
