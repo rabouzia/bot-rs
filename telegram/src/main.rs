@@ -1,64 +1,81 @@
 use dotenv::dotenv;
 //  teloxide::utils::html::code_block;
 use core::str;
-use std::path::Path;
+// use std::path;
 
-use std::fs::File;
-use std::io::Write;
+// use anyhow::{Context, Result, anyhow, bail};
+
+use reqwest::retry::never;
 use teloxide::{prelude::*, types::InputFile, utils::command::BotCommands};
+use tokio::fs::File;
+// use anyhow::{Context, Result, anyhow, bail};
+use tokio::fs::DirBuilder;
 
-mod insta;
+// mod insta;
 mod x;
 use crate::x::X;
 use crate::x::twitter;
+mod handler;
 mod tiktok;
+
+// use crate::tiktok::{Tiktok, tiktok};
+use crate::x::x_downloading;
+
+// async fn downloading(bot: Bot, msg: Message,lk: Vec<T>) -> anyhow::Result<()> {
+//     let dldir = std::path::Path::new(DL_DIR);
+//     let _ = fs::create_dir_all(dldir);
+//
+//     for media in T {
+//
+//         let filepath;
+//         // dbg!(&response);
+//
+//
+//         // dbg!(&filepath);
+//         if media.video {
+//             bot.send_video(msg.chat.id, InputFile::file(filepath))
+//                 .await
+//                 .unwrap();
+//         } else if media.img {
+//             bot.send_photo(msg.chat.id, InputFile::file(filepath))
+//                 .await
+//                 .unwrap();
+//         } else {
+//             return Ok(());
+//         }
+//
+//         //sendAnimation
+//     }
+//     Ok(())
+// }
+// struct Option<T>
+// {
+//
+// }
+
+/*
+
+let response = reqwest::get(media.url).await.context("Failed to download media file")?;
+
+
+ */
+
+// enum Which {
+//     Video,
+//     Img,
+// }
+
+const DL_DIR: &str = "./dls/";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
+    // let  mut dir = "dls";
     pretty_env_logger::init();
     log::info!("Starting command bot...");
     let bot = Bot::from_env();
-
+    DirBuilder::new().recursive(true).create(DL_DIR).await?;
     Command::repl(bot, answer).await;
-    Ok(())
-}
-
-async fn downloading(bot: Bot, msg: Message, lk: Vec<X>) -> Result<(), Box<dyn std::error::Error>> {
-    // let testdir = Builder::new().prefix("tmp").tempdir()?;
-    let testdir = Path::new("downloads");
-
-    for media in lk {
-        let response = reqwest::get(media.url).await.unwrap();
-        let filepath;
-
-        // dbg!(&response);
-        if media.video {
-            filepath = testdir.join(format!("{}.mp4", media.id));
-        } else if media.img {
-            filepath = testdir.join(format!("{}.png", media.id));
-        } else {
-            return Ok(());
-        }
-        let mut file = File::create(&filepath).unwrap();
-
-        let bytes = response.bytes().await.unwrap();
-        file.write_all(&bytes).unwrap();
-        // dbg!(&filepath);
-        if media.video {
-            bot.send_video(msg.chat.id, InputFile::file(filepath))
-                .await
-                .unwrap();
-        } else if media.img {
-            bot.send_photo(msg.chat.id, InputFile::file(filepath))
-                .await
-                .unwrap();
-        } else {
-            return Ok(());
-        }
-
-        //sendAnimation
-    }
     Ok(())
 }
 
@@ -77,9 +94,9 @@ enum Command {
     /// Handle a insta link
     #[command(parse_with = "split", alias = "insta")]
     Instagram,
-    /// Handle a insta link
+    /// Handle a tiktok link
     #[command(alias = "tk")]
-    Tiktok,
+    Tiktok(String),
 }
 // Instagram{opt: String, link: String},
 
@@ -93,7 +110,7 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
             if let Ok(tab) = twitter(handle).await {
                 bot.send_message(msg.chat.id, format!("x scrapping loading..."))
                     .await?;
-                let _ = downloading(bot, msg, tab).await;
+                let _ = x_downloading(bot, msg, tab).await;
             } else {
                 bot.send_message(msg.chat.id, format!("url not recognized"))
                     .await?;
@@ -102,16 +119,18 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
         Command::Instagram => {
             bot.send_message(msg.chat.id, format!("🚧💻👨🏻‍💻 insta is not ready yet🚧"))
                 .await?;
-            // let vec = Vec::new();
-            // let result = instagram(opt, vec).await;
-            // Downloading(bot, msg,result).await;
         }
-        Command::Tiktok => {
-            bot.send_message(msg.chat.id, format!("🚧💻👨🏻‍💻 tiktok is not ready yet🚧"))
+        Command::Tiktok(handle) => {
+            // if let Ok(tab) = tiktok(handle).await {
+            //     bot.send_message(msg.chat.id, format!("tiktok scrapping loading..."))
+            //         .await?;
+            //     // let _ = t_downloading(bot, msg, tab).await;
+            // } else {
+            //     bot.send_message(msg.chat.id, format!("url not recognized"))
+            //         .await?;
+            // }
+            bot.send_message(msg.chat.id, format!("🚧💻👨🏻‍💻 insta is not ready yet🚧"))
                 .await?;
-            // let vec = Vec::new();
-            // let result = instagram(opt, vec).await;
-            // Downloading(bot, msg,result).await;
         }
     };
     Ok(())

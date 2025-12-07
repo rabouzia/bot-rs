@@ -1,10 +1,18 @@
+// use crate::DL_DIR;
 use anyhow::{Context, Result, bail};
+use std::fs;
+use std::fs::File;
+use std::io::{BufRead, Write};
+use teloxide::Bot;
+use teloxide::prelude::Message;
+use teloxide::types::InputFile;
+
 #[derive(Debug, Default)]
 pub struct Tiktok {
-    video: bool,
-    img: bool,
-    url: String,
-    id: String,
+    pub video: bool,
+    pub img: bool,
+    pub url: String,
+    pub id: String,
 }
 
 impl Tiktok {
@@ -18,49 +26,87 @@ impl Tiktok {
         self.id = _id;
         return self;
     }
+
+    // https://www.tiktok.com/@benmoraga/video/7552558101023526166?is_from_webapp=1&sender_device=pc
+    //https://vm.tiktok.com/ZNdpECbDU/
 }
-// https://d.rapidcdn.app/v2?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJodHRwczovL3Y0NS1ldS50aWt0b2tjZG4uY29tLzVlYmU1ZDliYzg1NDc0MTE5YTNkZWVhMWI5MGE1YzNjLzY5MGU1YjJjL3ZpZGVvL3Rvcy9ubzFhL3Rvcy1ubzFhLXZlLTAwNjhjMDAxLW5vL280UFNEWXRIUXZiV2U0ZkFNQTZnR1FOZWpsendNTEFpSThMUlBJLz9hPTExODAmYnRpPWJHUnVaSHh2TVhJeGNtNTNabTFjWUY5ZWJXRnphSEZtT2clM0QlM0QmY2g9MCZjcj0wJmRyPTAmZXI9MCZjZD0wJTdDMCU3QzAlN0MwJmN2PTEmYnI9NTUyJmJ0PTI3NiZjcz0wJmRzPTYmZnQ9WHNGYjhxNGZtYmRQRDEyWndxV3Mzd1UxeFRReGFlRn5PNSZtaW1lX3R5cGU9dmlkZW9fbXA0JnFzPTAmcmM9TkRVNE5UeHBPRGM1TlRnNE9HVTdhRUJwTXpaeWRXNDVjbWM2TnpNemJ6Y3pOVUJmWW1Fd01TNDJYelF4TkdBd00ySXRZU051WTJjMU1tUnpiVE5oTFMxa01URnpjdyUzRCUzRCZ2dnBsPTEmbD0yMDI1MTEwNzA0NDc0NUVFOTU1NkQ2NTM5MDQ1OEZFMkFCJmJ0YWc9ZTAwMDhkMDAwIiwiZmlsZW5hbWUiOiJzbmFwdGlrXzc1Njk1NjMxNTM2OTMwMTk0MTVfdjIubXA0IiwiaGVhZGVycyI6eyJ1c2VyLWFnZW50IjoiVGVsZWdyYW1Cb3QgKGxpa2UgVHdpdHRlckJvdCkifSwiaWF0IjoxNzYyNDYyMDY1fQ.Z_-ye0Xr7tnw3Di2wQL7QKshK7sx8FTGBd2VO-Q2rbE&dl=1
+// pub fn tiktok_url_parser(handle: String) -> Result<String> {
+//     let extract: Vec<&str> = handle.splitn(6, "/").collect();
+//     if extract.len() <= 1 {
+//         bail!("Invalid tiktok url");
+//     }
+//
+//     let return_v = "";
+//     match extract[2] {
+//         "tiktok.com" => {
+//             return Ok(return_v.to_string());
+//         }
+//         "vm.tiktok.com" | "vt.tiktok.com" => {
+//             let tmp = reqwest::get(handle);
+//             // <a href="https://www.tiktok.com/@babayaga00066/video/7544412187167673632?_r=1&amp;_t=ZN-91BOcCNU2R4">Moved Permanently</a>.
+//             return tmp
+//                 .split("<a href=\"", "\">Moved Permanently</a>.")
+//                 .collect();
+//         }
+//         _ => {
+//             bail!("Unrecognized tiktok URL.");
+//         }
+//     }
+// }
 
-// https://vm.tiktok.com/ZNdwh5QQP/
+// pub async fn tiktok(handle: String) -> Result<Vec<Tiktok>> {
+//     let vt: Vec<Tiktok> = Vec::new();
+//     // let last: String = tiktok_url_parser(handle)?;
+//
+//     let scrapper_key = env::var("TK_SCRAPPER").context("TK_SCRAPPER not found in .env")?;
+//
+//     let _body = reqwest::get(&format!("{}{}", scrapper_key, last))
+//         .await
+//         .context("REASON")?
+//         .text()
+//         .await
+//         .context("REASON")?;
+//
+//     // let  mut easy = Easy::new();
+//     Ok(vt)
+// }
 
-// https://tikcdn.io/ssstik/ZNdwh5QQP
-
-pub fn tiktok_url_parser(handle: String) -> Result<String> {
-    let extract: Vec<&str> = handle.splitn(6, "/").collect();
-    if extract.len() <= 1 {
-        bail!("profile_pic_url_hd not found in JSON.");
-    }
-    match extract[2] {
-        "tiktok.com" | "vm.tiktok.com" | "vt.tiktok.com" => {
-            ();
-        }
-        _ => {}
-    }
-    let mut mid = extract[5];
-    if mid.contains("?") {
-        let last: Vec<&str>;
-        last = mid.split("?").collect();
-        println!("new URL: {}", last[0]);
-        mid = last[0];
-    }
-
-    return Ok(mid.to_string());
-}
-
-pub async fn tiktok(handle: String) -> Result<Vec<Tiktok>> {
-    let vt: Vec<Tiktok> = Vec::new();
-    let last: String = tiktok_url_parser(handle)?;
-
-    let scrapper_key = env::var("TK_SCRAPPER").context("TK_SCRAPPER not found in .env")?;
-
-
-    let _body = reqwest::get(&format!("{}{}", scrapper_key, last))
-        .await
-        .context("REASON")?
-        .text()
-        .await
-        .context("REASON")?;
-
-    // let  mut easy = Easy::new();
-    Ok(vt)
-}
+// pub async  fn t_downloading(bot: Bot, msg: Message,lk: Vec<Tiktok>) -> anyhow::Result<()> {
+//     let dldir = std::path::Path::new(DL_DIR);
+//     let _ = fs::create_dir_all(dldir);
+//
+//     for media in lk {
+//         let response = reqwest::get(media.url).await.context("Failed to download media file")?;
+//         let filepath;
+//         // dbg!(&response);
+//         if media.video {
+//             filepath = dldir.join(format!("{}.mp4", media.id));
+//         } else if media.img {
+//             filepath = dldir.join(format!("{}.png", media.id));
+//         } else {
+//             return Ok(());
+//         }
+//
+//         if  !std::fs::exists(&filepath)? {
+//             let mut file = File::create(&filepath).context("cannot create file")?;
+//             let bytes = response.bytes().await.unwrap();
+//             file.write_all(&bytes).context(format!("Cannot write to file: {}", filepath.display()))?;
+//         }
+//
+//         // dbg!(&filepath);
+//         if media.video {
+//             bot.send_video(msg.chat.id, InputFile::file(filepath))
+//                 .await
+//                 .unwrap();
+//         } else if media.img {
+//             bot.send_photo(msg.chat.id, InputFile::file(filepath))
+//                 .await
+//                 .unwrap();
+//         } else {
+//             return Ok(());
+//         }
+//
+//         //sendAnimation
+//     }
+//     Ok(())
+// }

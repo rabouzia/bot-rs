@@ -7,6 +7,8 @@ pub struct Insta {
     id: String,
 }
 
+
+
 impl Insta {
     pub fn new(mut self, context: &'static str, _url: String, _id: String) -> Insta {
         match context {
@@ -24,7 +26,8 @@ impl Insta {
 
 use anyhow::{Context, Result};
 use serde_json::Value;
-use std::env;
+use std::{env, fs};
+use std::fs::File;
 
 pub async fn instagram_url_parser(handle: String, vi: Vec<Insta>) -> Result<Vec<Insta>> {
     let _scrapper_key = env::var("INSTA_SCRAPPER").context("INSTA_SCRAPPER not found in .env");
@@ -85,7 +88,7 @@ pub async fn instagram_url_parser(handle: String, vi: Vec<Insta>) -> Result<Vec<
         println!("Profile pic URL: {}", profile_pic_url_hd);
         println!("Profile pic name (no ext): {}", pic_name);
 
-        let mut _valer :Vec<Insta> = Vec::new();
+        let mut _valer: Vec<Insta> = Vec::new();
         // Create and push an avatar item (matches your X::new usage for media)
         // let avatar = Insta::new("img", profile_pic_url_hd.to_string(), pic_name.clone());
         // vi.push(avatar);
@@ -95,3 +98,17 @@ pub async fn instagram_url_parser(handle: String, vi: Vec<Insta>) -> Result<Vec<
 
     Ok(vi)
 }
+
+// pub async fn i_downloading(bot: Bot, msg: Message,lk: Vec<Insta>) -> anyhow::Result<()> {
+//     let dldir = std::path::Path::new(DL_DIR);
+//     let _ = fs::create_dir_all(dldir);
+//
+//     for media in lk {
+//         let response = reqwest::get(media.url).await.context("Failed to download media file")?;
+//         let filepath;
+//         
+//
+//       
+//     }
+//     Ok(())
+// }
