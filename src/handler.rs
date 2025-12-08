@@ -33,7 +33,7 @@ pub async fn create_file(str: String, media: &Which, id: &String) -> Result<Stri
         _ => bail!("Unsupported media type encountered: {:?}", media),
     };
 
-    let mut file = File::create(format!("{DL_DIR}{file_name}")).await?;
+    let mut file = File::create(format!("{DL_DIR}/{file_name}")).await?;
 
     let mut buffer = Cursor::new(&bytes);
 
@@ -41,7 +41,7 @@ pub async fn create_file(str: String, media: &Which, id: &String) -> Result<Stri
         .await
         .context("Failed to write to file")?;
     file.flush().await.context("Failed to flush file buffer")?;
-    file_name = format!("{DL_DIR}{file_name}");
+    file_name = format!("{DL_DIR}/{file_name}");
     Ok(file_name)
 }
 

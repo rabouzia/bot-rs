@@ -65,7 +65,7 @@ let response = reqwest::get(media.url).await.context("Failed to download media f
 //     Img,
 // }
 
-const DL_DIR: &str = "./dls/";
+const DL_DIR: &str = "./downloads";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
