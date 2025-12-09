@@ -18,7 +18,7 @@ use crate::x::twitter;
 mod handler;
 mod tiktok;
 
-// use crate::tiktok::{Tiktok, tiktok};
+use crate::tiktok::{Tiktok, tiktok, t_downloading};
 use crate::x::x_downloading;
 
 // async fn downloading(bot: Bot, msg: Message,lk: Vec<T>) -> anyhow::Result<()> {
@@ -120,18 +120,18 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
             bot.send_message(msg.chat.id, format!("🚧💻👨🏻‍💻 insta is not ready yet🚧"))
                 .await?;
         }
-        Command::Tiktok(handle) => {
-            // if let Ok(tab) = tiktok(handle).await {
-            //     bot.send_message(msg.chat.id, format!("tiktok scrapping loading..."))
-            //         .await?;
-            //     // let _ = t_downloading(bot, msg, tab).await;
-            // } else {
-            //     bot.send_message(msg.chat.id, format!("url not recognized"))
-            //         .await?;
-            // }
-            bot.send_message(msg.chat.id, format!("🚧💻👨🏻‍💻 insta is not ready yet🚧"))
-                .await?;
-        }
+        Command::Tiktok(handle) => {`
+            if let Ok(tab) = tiktok(handle).await {
+                bot.send_message(msg.chat.id, format!("tiktok scrapping loading..."))
+                    .await?;
+                let _ = t_downloading(bot, msg, tab).await;
+            } else {
+                bot.send_message(msg.chat.id, format!("tiktok url not recognized"))
+                    .await?;
+            }
+        } //     // let _ = t_downloading(bot, msg, tab).await;
+          // bot.send_message(msg.chat.id, format!("🚧💻👨🏻‍💻 insta is not ready yet🚧"))
+          //     .await?;
     };
     Ok(())
 }

@@ -19,8 +19,9 @@ use teloxide::types::InputFile;
 // mod handler;
 // #[derive(Debug, Default)]
 // #[derive(Debug)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum Which {
+    #[default]
     Video,
     Img,
     Txt,
