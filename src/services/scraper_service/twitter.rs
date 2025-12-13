@@ -18,7 +18,7 @@ impl TryFrom<&serde_json::Value> for TwitterMediaMetadata {
         let type_ = get_index_as_str("type")?;
 
         let (kind, url) = match type_ {
-            "image" => (MediaKind::Image, get_index_as_str("url")?),
+            "image" | "photo" => (MediaKind::Image, get_index_as_str("url")?),
 
             "video" => (MediaKind::Video, get_index_as_str("videoUrl")?),
 
