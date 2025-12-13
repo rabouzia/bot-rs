@@ -7,7 +7,6 @@ use crate::services::scraper_service::{MediaKind, MediaMetadata, TwitterMediaMet
 
 use anyhow::anyhow;
 use dotenvy_macro::dotenv;
-use reqwest::Url;
 use serde_json::Value;
 use tracing::{info, instrument};
 
@@ -49,7 +48,7 @@ pub struct Twitter;
 
 impl Twitter {
     #[instrument(skip_all)]
-    pub async fn scrape_medias(handle: String) -> AnyResult<Vec<AnyResult<MediaMetadata>>> {
+    pub async fn scrape_medias(handle: &str) -> AnyResult<Vec<AnyResult<MediaMetadata>>> {
         info!("starting media scraping");
 
         let post_id = Twitter::post_id_from_url(handle).map_err(error::custom)?;
@@ -87,7 +86,7 @@ impl Twitter {
         Ok(medias)
     }
 
-    fn post_id_from_url(handle: String) -> AnyResult<String> {
+    fn post_id_from_url(handle: &str) -> AnyResult<String> {
         let extract: Vec<&str> = handle.splitn(6, "/").collect();
         if extract.len() < 6 {
             return Err(error::invalid_url(
