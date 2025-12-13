@@ -3,19 +3,21 @@ name = "telegram"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "discord_bot"
+path = "src/discord.rs"
+
 [dependencies]
 teloxide = { version = "0.17.0", features = ["macros"] }
-log = "0.4"
 pretty_env_logger = "0.5"
-tokio = { version =  "1.8", features = ["rt-multi-thread", "macros"] }
-curl = "0.4.49"
+tokio = { version =  "1.8", features = ["full"] }
 serde_json = "1.0.145"
 serde = "1.0.228"
-reqwest = { version = "0.12.24", features = ["blocking"]}
-rustc-serialize = "0.3.25"
+reqwest = { version = "0.12.25", features = ["json"] }
 downloader = "0.2.8"
 tempfile = "3.23.0"
-file = "1.1.2"
-dotenv = "0.15.0"
-env = "1.0.1"
 anyhow = "1.0.100"
+tracing = "0.1.43"
+dotenvy = "0.15.7"
+dotenvy_macro = "0.15.7"
+infer = "0.19.0"
