@@ -1,4 +1,6 @@
 use dotenvy::dotenv;
+use reqwest::Url;
+use teloxide::utils::command::ParseError;
 use teloxide::{prelude::*, utils::command::BotCommands};
 use tracing::{debug, error, info, instrument, warn};
 use tracing_subscriber::EnvFilter;
@@ -40,12 +42,13 @@ async fn main() {
 )]
 enum Command {
     /// Display this text.
-    #[command(aliases = ["help", "h", "?"])]
+    #[command(aliases = ["h", "?"], hide_aliases)]
     Help,
 
-    /// Handle a x link
-    #[command(aliases = ["twitter", "x"])]
-    Twitter(String),
+    /// Download medias attached to the post
+    #[command(aliases = ["t"], hide_aliases)]
+    Twitter(Url),
+
     // /// Handle a insta link
     // #[command(parse_with = "split", alias = "insta")]
     // Instagram,

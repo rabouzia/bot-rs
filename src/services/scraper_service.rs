@@ -1,7 +1,7 @@
 mod twitter;
 use twitter::Twitter;
 
-use crate::{BotResult, Command};
+use crate::{BotResult, Command, error};
 use crate::error::BotError;
 use reqwest::Url;
 use teloxide::utils::command::BotCommands as _;
@@ -75,29 +75,7 @@ impl DefaultScraperService {
     pub async fn scrape(&self, cmd: &Command) -> BotResult<Vec<BotResult<MediaMetadata>>> {
         match cmd {
             Command::Help => panic!("Should never come here: Help command is already handled"),
-            Command::Twitter(handle) => {
-                tracing::info!("Starting Twitter media scraping for handle: {}",
-                               handle.split('/').last().unwrap_or(&handle));
-
-                let scraping_results = Twitter::scrape_medias(handle).await?;
-
-                if scraping_results.is_empty() {
-                    tracing::warn!("No media items found for Twitter handle");
-                    return Err(BotError::NoMediaFound.into());
-                }
-
-                // Logging
-                {
-                    let total_count = scraping_results.len();
-                    let success_count = scraping_results.iter().filter(|r| r.is_ok()).count();
-                    let error_count = total_count - success_count;
-
-                    tracing::info!("Twitter scraping completed: {} total, {} successful, {} failed",
-                       total_count, success_count, error_count);
-                }
-
-                Ok(scraping_results)
-            }
+            Command::Twitter(handle) => Twitter::scrape(handle).await
         }
     }
 }

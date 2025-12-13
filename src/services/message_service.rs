@@ -123,7 +123,7 @@ async fn download_and_send(
                 error!("Failed to send error message to chat {}: {}", chat_id.0, send_err);
             }
 
-            Err(BotError::MediaSendFailed)
+            Err(error::media_send_failed!())
         }
     }
 }
