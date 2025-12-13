@@ -1,7 +1,8 @@
 mod twitter;
 use twitter::Twitter;
 
-use crate::{AnyResult, Command};
+use crate::{BotResult, Command};
+use crate::error::BotError;
 use reqwest::Url;
 use teloxide::utils::command::BotCommands as _;
 use std::fmt::Debug;
@@ -63,7 +64,7 @@ impl ScraperService {
         Self::Default(DefaultScraperService)
     }
 
-    pub async fn scrape(&self, cmd: &Command) -> AnyResult<Vec<AnyResult<MediaMetadata>>> {
+    pub async fn scrape(&self, cmd: &Command) -> BotResult<Vec<BotResult<MediaMetadata>>> {
         match self {
             Self::Default(service) => service.scrape(cmd).await,
         }
@@ -71,13 +72,9 @@ impl ScraperService {
 }
 
 impl DefaultScraperService {
-    pub async fn scrape(&self, cmd: &Command) -> AnyResult<Vec<AnyResult<MediaMetadata>>> {
+    pub async fn scrape(&self, cmd: &Command) -> BotResult<Vec<BotResult<MediaMetadata>>> {
         match cmd {
-            Command::Help => {
-                // Return an error with descriptions
-                tracing::debug!("Help command received");
-                Err(anyhow::anyhow!(crate::Command::descriptions()))
-            }
+            Command::Help => panic!("Should never come here: Help command is already handled"),
             Command::Twitter(handle) => {
                 tracing::info!("Starting Twitter media scraping for handle: {}",
                                handle.split('/').last().unwrap_or(&handle));
@@ -86,7 +83,7 @@ impl DefaultScraperService {
 
                 if scraping_results.is_empty() {
                     tracing::warn!("No media items found for Twitter handle");
-                    return Err(anyhow::anyhow!("Nothing to scrape"));
+                    return Err(BotError::NoMediaFound.into());
                 }
 
                 // Logging
@@ -94,7 +91,7 @@ impl DefaultScraperService {
                     let total_count = scraping_results.len();
                     let success_count = scraping_results.iter().filter(|r| r.is_ok()).count();
                     let error_count = total_count - success_count;
-                    
+
                     tracing::info!("Twitter scraping completed: {} total, {} successful, {} failed",
                        total_count, success_count, error_count);
                 }

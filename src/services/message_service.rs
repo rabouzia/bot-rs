@@ -1,9 +1,10 @@
+use crate::error::BotError;
+use crate::{BotResult, error};
 use crate::services::scraper_service::{MediaKind, MediaMetadata};
-use crate::AnyResult;
 use teloxide::{prelude::Requester, Bot};
 use teloxide::types::{ChatId, InputFile, Message};
 use tokio::task::JoinSet;
-use tracing::{Instrument as _, debug, error, info, instrument, warn};
+use tracing::{Instrument as _, debug, info, instrument, warn};
 
 #[derive(Debug)]
 pub enum MessageService {
@@ -22,8 +23,8 @@ impl MessageService {
         &self,
         bot: &Bot,
         chat_id: ChatId,
-        scraping_results: Vec<AnyResult<MediaMetadata>>,
-    ) -> Vec<Result<Message, anyhow::Error>> {
+        scraping_results: Vec<BotResult<MediaMetadata>>,
+    ) -> Vec<BotResult<Message>> {
         match self {
             Self::Default(service) => service.send_scraping_results(bot, chat_id, scraping_results).await,
         }
@@ -35,8 +36,8 @@ impl DefaultMessageService {
         &self,
         bot: &Bot,
         chat_id: ChatId,
-        scraping_results: Vec<AnyResult<MediaMetadata>>,
-    ) -> Vec<Result<Message, anyhow::Error>> {
+        scraping_results: Vec<BotResult<MediaMetadata>>,
+    ) -> Vec<BotResult<Message>> {
         let total_items = scraping_results.len();
         info!("Starting to send {} media items to chat {}", total_items, chat_id.0);
 
@@ -66,8 +67,7 @@ impl DefaultMessageService {
                             let error_msg = format!("Error: {err}");
                             let send_result = bot.send_message(chat_id, error_msg).await;
                             if let Err(send_err) = send_result {
-                                error!("Failed to send error message to chat {}: {}", chat_id.0, send_err);
-                                return Err(anyhow::anyhow!(send_err));
+                                return Err(error::other!("Failed to send error message to chat {}: {}", chat_id.0, send_err));
                             }
                             debug!("Error message sent to chat {} for item #{}", chat_id.0, index + 1);
                             Ok(send_result.unwrap())
@@ -94,7 +94,7 @@ async fn download_and_send(
     bot: Bot,
     chat_id: ChatId,
     metadata: MediaMetadata,
-) -> AnyResult<Message> {
+) -> BotResult<Message> {
     debug!("Starting media download and send process for: {}", metadata.url());
 
     let input_file = InputFile::url(metadata.url().clone());
@@ -123,7 +123,7 @@ async fn download_and_send(
                 error!("Failed to send error message to chat {}: {}", chat_id.0, send_err);
             }
 
-            Err(anyhow::anyhow!("Failed to send media: {err}"))
+            Err(BotError::MediaSendFailed)
         }
     }
 }

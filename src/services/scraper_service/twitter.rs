@@ -1,23 +1,18 @@
-mod error;
-
-use crate::{
-    AnyResult, macros::warn_and_return
-};
+use crate::BotResult;
 use crate::services::scraper_service::{MediaKind, MediaMetadata, TwitterMediaMetadata};
-
-use anyhow::anyhow;
+use crate::{error, error::BotError};
 use dotenvy_macro::dotenv;
 use serde_json::Value;
 use tracing::{info, instrument};
 
 impl TryFrom<&serde_json::Value> for TwitterMediaMetadata {
-    type Error = anyhow::Error;
+    type Error = BotError;
 
     fn try_from(item: &serde_json::Value) -> Result<Self, Self::Error> {
-        let get_index_as_str = |index: &str| -> AnyResult<&str> {
+        let get_index_as_str = |index: &str| -> BotResult<&str> {
             item.get(index)
                 .and_then(|v| v.as_str())
-                .ok_or_else(|| error::missing_field(index))
+                .ok_or_else(|| error::invalid_scraper_response!("missing field {index}"))
         };
 
         let type_ = get_index_as_str("type")?;
@@ -27,17 +22,23 @@ impl TryFrom<&serde_json::Value> for TwitterMediaMetadata {
 
             "video" => (MediaKind::Video, get_index_as_str("videoUrl")?),
 
-            _ => return Err(anyhow!("unknown media type: {}", type_)),
+            _ => {
+                return Err(error::invalid_scraper_response!(
+                    "unknown media type: {}",
+                    type_
+                ));
+            }
         };
 
-        let url = reqwest::Url::parse(url)
-            .map_err(|err| warn_and_return!("invalid url: {err}"))?;
+        let url =
+            reqwest::Url::parse(url).map_err(|err| error::invalid_url!("invalid url: {err}"))?;
 
-        let id = url.as_str()
+        let id = url
+            .as_str()
             .rsplit('/')
             .next()
             .and_then(|filename| filename.split_once('.').map(|(name, _)| name))
-            .ok_or_else(|| anyhow!("invalid URL format: {}", url))?
+            .ok_or_else(|| error::invalid_url!("invalid url format: {}", url))?
             .to_string();
 
         Ok(TwitterMediaMetadata { url, id, kind })
@@ -48,10 +49,10 @@ pub struct Twitter;
 
 impl Twitter {
     #[instrument(skip_all)]
-    pub async fn scrape_medias(handle: &str) -> AnyResult<Vec<AnyResult<MediaMetadata>>> {
+    pub async fn scrape_medias(handle: &str) -> BotResult<Vec<BotResult<MediaMetadata>>> {
         info!("starting media scraping");
 
-        let post_id = Twitter::post_id_from_url(handle).map_err(error::custom)?;
+        let post_id = Twitter::parse_post_id_from_url(handle)?;
 
         let scraper_url = Twitter::scraper_link(&post_id);
 
@@ -63,20 +64,25 @@ impl Twitter {
     }
 
     #[instrument(skip_all, fields(url = %scraper_url))]
-    async fn scrape_medias_inner(scraper_url: &str) -> AnyResult<Vec<AnyResult<MediaMetadata>>> {
-        let response = reqwest::get(scraper_url).await.map_err(error::custom)?;
+    async fn scrape_medias_inner(scraper_url: &str) -> BotResult<Vec<BotResult<MediaMetadata>>> {
+        let response = reqwest::get(scraper_url)
+            .await
+            .map_err(|err| error::other!("{err}"))?;
 
-        let response_json: Value = response.json().await.map_err(error::invalid_response)?;
+        let response_json: Value = response
+            .json()
+            .await
+            .map_err(|err| error::other!("{err}"))?;
 
         let data = response_json
             .get("data")
-            .ok_or_else(|| error::missing_field("data"))?;
+            .ok_or_else(|| error::invalid_scraper_response!("missing field data"))?;
 
         let json_medias = data
             .get("media")
-            .ok_or_else(|| error::missing_field("media"))?
+            .ok_or_else(|| error::invalid_scraper_response!("missing field media"))?
             .as_array()
-            .ok_or_else(|| error::invalid_field("media"))?;
+            .ok_or_else(|| error::invalid_scraper_response!("invalid field media"))?;
 
         let medias = json_medias
             .iter()
@@ -86,17 +92,17 @@ impl Twitter {
         Ok(medias)
     }
 
-    fn post_id_from_url(handle: &str) -> AnyResult<String> {
+    fn parse_post_id_from_url(handle: &str) -> Result<String, BotError> {
         let extract: Vec<&str> = handle.splitn(6, "/").collect();
         if extract.len() < 6 {
-            return Err(error::invalid_url(
+            return Err(error::invalid_url!(
                 "Invalid domain expect more segment in the url",
             ));
         }
 
         match extract[2] {
             "x.com" | "twitter.com" => {}
-            _ => return Err(error::invalid_url("Invalid domain")),
+            _ => return Err(error::invalid_url!("Invalid domain")),
         }
 
         let mut mid = extract[5];

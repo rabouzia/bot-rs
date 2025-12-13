@@ -1,30 +1,28 @@
 use dotenvy::dotenv;
 use teloxide::{prelude::*, utils::command::BotCommands};
-use tokio::fs::DirBuilder;
-use tracing::{Level, debug, error, info, instrument, warn};
-
-mod macros;
+use tracing::{debug, error, info, instrument, warn};
 use tracing_subscriber::EnvFilter;
 
+mod error;
 mod services;
 
+use crate::error::BotError;
 use crate::services::container::ServiceContainer;
 
 const DOWNLOAD_DIR: &str = "./download";
 
-type AnyResult<T> = Result<T, anyhow::Error>;
+type BotResult<T> = Result<T, BotError>;
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-
 
     tracing_subscriber::fmt()
         // .with_env_filter(EnvFilter::from_default_env())
         .with_env_filter(EnvFilter::new("telegram_bot=trace"))
         .pretty()
         .with_line_number(true)
-        .with_target(true)  // Include module target in logs
+        .with_target(true) // Include module target in logs
         .init();
 
     info!("Starting Telegram command bot...");
@@ -76,9 +74,15 @@ impl std::fmt::Display for Command {
     )
 )]
 async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
-    debug!("Received command from user {} in chat {}",
-           msg.from.as_ref().map(|u| u.username.clone()).unwrap_or_default().unwrap_or(format!("<no_username>")),
-           msg.chat.id.0);
+    debug!(
+        "Received command from user {} in chat {}",
+        msg.from
+            .as_ref()
+            .map(|u| u.username.clone())
+            .unwrap_or_default()
+            .unwrap_or(format!("<no_username>")),
+        msg.chat.id.0
+    );
 
     if matches!(cmd, Command::Help) {
         let help_msg = Command::descriptions().to_string();
@@ -98,7 +102,7 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
         Ok(res) => {
             debug!("Scraping completed, found {} media items", res.len());
             res
-        },
+        }
         Err(err) => {
             error!(user_id = msg.from.as_ref().map(|u| u.id.0).unwrap_or(0),
                    error = %err,
@@ -109,26 +113,39 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
     };
 
     // Send results with progress tracking
-    let sent_results = service_container.message_service.send_scraping_results(&bot, msg.chat.id, scraping_results).await;
+    let sent_results = service_container
+        .message_service
+        .send_scraping_results(&bot, msg.chat.id, scraping_results)
+        .await;
 
     let successful_sends = sent_results.iter().filter(|result| result.is_ok()).count();
     let failed_sends = sent_results.len() - successful_sends;
 
     if failed_sends > 0 {
-        warn!("Sent {} media items successfully, {} failed", successful_sends, failed_sends);
+        warn!(
+            "Sent {} media items successfully, {} failed",
+            successful_sends, failed_sends
+        );
     } else {
         info!("Successfully sent {} media items", successful_sends);
     }
 
-    debug!("Command {} processing completed for user {}", cmd,
-           msg.from.as_ref().map(|u| u.username.clone()).unwrap_or_default().unwrap_or(format!("<no_username>")),
+    debug!(
+        "Command {} processing completed for user {}",
+        cmd,
+        msg.from
+            .as_ref()
+            .map(|u| u.username.clone())
+            .unwrap_or_default()
+            .unwrap_or(format!("<no_username>")),
     );
 
     Ok(())
 }
 
-async fn send_error(bot: &Bot, msg: &Message, err: anyhow::Error) {
-    let error_msg = format!("Error: {}", err);
+async fn send_error(bot: &Bot, msg: &Message, err: BotError) {
+    let error_msg = err.to_string();
+
     warn!(user_id = msg.from.as_ref().map(|u| u.id.0).unwrap_or(0),
             error = %err,
             "Sending error message to user");
@@ -139,5 +156,4 @@ async fn send_error(bot: &Bot, msg: &Message, err: anyhow::Error) {
                 send_error = %send_err,
                 "Failed to send error message to user");
     }
-
 }
