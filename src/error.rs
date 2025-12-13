@@ -3,6 +3,7 @@ pub(crate) use macros::*;
 
 use std::fmt;
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum BotError {
     NoMediaFound,

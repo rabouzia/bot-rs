@@ -1,6 +1,5 @@
 use dotenvy::dotenv;
 use reqwest::Url;
-use teloxide::utils::command::ParseError;
 use teloxide::{prelude::*, utils::command::BotCommands};
 use tracing::{debug, error, info, instrument, warn};
 use tracing_subscriber::EnvFilter;
@@ -10,8 +9,6 @@ mod services;
 
 use crate::error::BotError;
 use crate::services::container::ServiceContainer;
-
-const DOWNLOAD_DIR: &str = "./download";
 
 type BotResult<T> = Result<T, BotError>;
 
@@ -83,7 +80,7 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
             .as_ref()
             .map(|u| u.username.clone())
             .unwrap_or_default()
-            .unwrap_or(format!("<no_username>")),
+            .unwrap_or("<no_username>".to_string()),
         msg.chat.id.0
     );
 
@@ -140,7 +137,7 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
             .as_ref()
             .map(|u| u.username.clone())
             .unwrap_or_default()
-            .unwrap_or(format!("<no_username>")),
+            .unwrap_or("<no_username>".to_string()),
     );
 
     Ok(())

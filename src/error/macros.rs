@@ -1,3 +1,5 @@
+#![allow(clippy::single_component_path_imports)]
+
 macro_rules! error {
     ($err:expr, $fmt:expr, $($arg:expr),* $(,)?) => {{
 		use ::tracing;
@@ -30,6 +32,7 @@ macro_rules! error_macro {
 	};
 
 	(@$name:ident, $error:expr, with $dollar:tt) => {
+		#[allow(unused_macros)]
 		macro_rules! $name {
 			() => {
 				$error

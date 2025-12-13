@@ -45,7 +45,6 @@ impl DefaultMessageService {
 
         for (index, result) in scraping_results.into_iter().enumerate() {
             let bot = bot.clone();
-            let chat_id = chat_id;
 
             match result {
                 Ok(metadata) => {

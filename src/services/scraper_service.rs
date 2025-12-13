@@ -1,10 +1,8 @@
 mod twitter;
 use twitter::Twitter;
 
-use crate::{BotResult, Command, error};
-use crate::error::BotError;
+use crate::{BotResult, Command};
 use reqwest::Url;
-use teloxide::utils::command::BotCommands as _;
 use std::fmt::Debug;
 
 #[derive(Debug, Clone, Copy)]
@@ -26,6 +24,7 @@ impl std::fmt::Display for MediaMetadata {
 
 #[derive(Debug)]
 pub struct TwitterMediaMetadata {
+    #[allow(dead_code)]
     pub id: String,
     pub url: Url,
     pub kind: MediaKind,

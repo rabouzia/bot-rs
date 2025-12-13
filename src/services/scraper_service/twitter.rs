@@ -63,13 +63,12 @@ impl Twitter {
             // let post_id = Twitter::parse_post_id_from_url(handle)?;
             let post_id = handle.path_segments()
                 .ok_or_else(|| error::invalid_url!("{handle}"))?
-                .last()
+                .next_back()
                 .ok_or_else(|| error::invalid_url!("{handle}"))?;
 
-            let scraper_url = Twitter::scraper_link(&post_id)?;
+            let scraper_url = Twitter::scraper_link(post_id)?;
 
-            let res = Twitter::scrape_medias_inner(&scraper_url).await?;
-            res
+            Twitter::scrape_medias_inner(&scraper_url).await?
         };
 
         info!("media scraping finished");
@@ -118,30 +117,6 @@ impl Twitter {
             .collect();
 
         Ok(medias)
-    }
-
-    fn parse_post_id_from_url(handle: &str) -> Result<String, BotError> {
-        let extract: Vec<&str> = handle.splitn(6, "/").collect();
-        if extract.len() < 6 {
-            return Err(error::invalid_url!(
-                "Invalid domain expect more segment in the url",
-            ));
-        }
-
-        match extract[2] {
-            "x.com" | "twitter.com" => {}
-            _ => return Err(error::invalid_url!("Invalid domain")),
-        }
-
-        let mut mid = extract[5];
-        if mid.contains("?") {
-            let last: Vec<&str>;
-            last = mid.split("?").collect();
-            println!("new URL: {}", last[0]);
-            mid = last[0];
-        }
-
-        Ok(mid.to_string())
     }
 
     #[instrument]
