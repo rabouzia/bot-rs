@@ -1,32 +1,15 @@
 mod error;
 
 use crate::{
-    AnyResult, macros::warn_and_return, scraper::{MediaKind, MediaMetadata, Metadata}
+    AnyResult, macros::warn_and_return
 };
+use crate::services::scraper_service::{MediaKind, MediaMetadata, TwitterMediaMetadata};
 
 use anyhow::anyhow;
 use dotenvy_macro::dotenv;
 use reqwest::Url;
 use serde_json::Value;
 use tracing::{info, instrument};
-
-#[derive(Debug)]
-pub struct TwitterMediaMetadata {
-    #[allow(dead_code)]
-    id: String,
-    url: Url,
-    kind: MediaKind
-}
-
-impl Metadata for TwitterMediaMetadata {
-    fn url(&self) -> &Url {
-        &self.url
-    }
-
-    fn kind(&self) -> MediaKind {
-        self.kind
-    }
-}
 
 impl TryFrom<&serde_json::Value> for TwitterMediaMetadata {
     type Error = anyhow::Error;

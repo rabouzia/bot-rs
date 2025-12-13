@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [[bin]]
-name = "discord_bot"
-path = "src/discord.rs"
+name = "telegram_bot"
+path = "src/telegram.rs"
 
 [dependencies]
 teloxide = { version = "0.17.0", features = ["macros"] }
