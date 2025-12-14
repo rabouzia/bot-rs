@@ -1,5 +1,5 @@
-mod macros;
-pub(crate) use macros::*;
+pub(crate) mod macros;
+use macros::*;
 
 use std::fmt;
 
@@ -32,3 +32,22 @@ impl fmt::Display for BotError {
 }
 
 impl std::error::Error for BotError {}
+
+// Errors builder macros
+error_macro!(no_media_found BotError::NoMediaFound);
+error_macro!(invalid_link BotError::InvalidLink);
+error_macro!(invalid_url BotError::InvalidUrl);
+error_macro!(media_send_failed BotError::MediaSendFailed);
+error_macro!(invalid_scraper_response BotError::InvalidScraperResponse);
+error_macro!(file_type_not_supported BotError::FileTypeNotSupported);
+error_macro!(invalid_media BotError::InvalidMedia);
+error_macro!(other BotError::Other);
+
+pub(crate) use no_media_found;
+pub(crate) use invalid_link;
+pub(crate) use invalid_url;
+pub(crate) use media_send_failed;
+pub(crate) use invalid_scraper_response;
+pub(crate) use file_type_not_supported;
+pub(crate) use invalid_media;
+pub(crate) use other;
