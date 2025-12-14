@@ -26,22 +26,21 @@ impl TryFrom<&serde_json::Value> for TwitterMediaMetadata {
             "video" => (MediaKind::Video, get_index_as_str("videoUrl")?),
 
             _ => {
-                return Err(error::invalid_scraper_response!(
-                    "unknown media type: {}",
-                    type_
+                return Err(error::file_type_not_supported!(
+                    "file type not supported: {type_}"                    
                 ));
             }
         };
 
         let url =
-            reqwest::Url::parse(url).map_err(|err| error::invalid_url!("invalid url: {err}"))?;
+            reqwest::Url::parse(url).map_err(|err| error::invalid_scraper_response!("invalid url: {err}"))?;
 
         let id = url
             .as_str()
             .rsplit('/')
             .next()
             .and_then(|filename| filename.split_once('.').map(|(name, _)| name))
-            .ok_or_else(|| error::invalid_url!("invalid url format: {}", url))?
+            .ok_or_else(|| error::invalid_scraper_response!("invalid url: {}", url))?
             .to_string();
 
         Ok(TwitterMediaMetadata { url, id, kind })

@@ -49,5 +49,4 @@ pub(crate) use invalid_url;
 pub(crate) use media_send_failed;
 pub(crate) use invalid_scraper_response;
 pub(crate) use file_type_not_supported;
-pub(crate) use invalid_media;
 pub(crate) use other;
