@@ -12,6 +12,45 @@ use crate::core::*;
 pub(crate) struct TelegramSender;
 
 impl TelegramSender {
+
+    #[instrument(skip_all, fields(total_items = scraping_results.len()))]
+    async fn send_medias(bot: teloxide::Bot, chat_id: ChatId, scraping_results: Vec<BotResult<MediaMetadata>>) -> BotResult<()> {
+        info!("Sending {} media items", scraping_results.len());
+
+        let mut jobs = JoinSet::new();
+        let bot = Arc::new(bot);
+
+        for (item_index, result) in scraping_results.into_iter().enumerate() {
+            let bot = Arc::clone(&bot);
+            match result {
+                Ok(metadata) => {
+                    debug!("Processing media item");
+                    jobs.spawn(async move {
+                        match Self::download_and_send(&bot, chat_id, metadata, item_index).await {
+                            Ok(_) => debug!("Media item processing completed"),
+                            Err(err) => warn!("Failed to send media item: {err}"),
+                        }
+                    });
+                }
+
+                Err(err) => {
+                    debug!("Processing error for media item: {err}");
+                    jobs.spawn(async move {
+                        match bot.send_message(chat_id, err.to_string()).await {
+                            Ok(_) => debug!("Error message sent"),
+                            Err(err) => warn!("Failed to send error message: {err}"),
+                        }
+                    });
+                }
+            }
+        }
+
+        let results = jobs.join_all().await;
+        info!("Completed: sent {} items", results.len());
+
+        Ok(())
+    }
+
     #[instrument(skip_all, fields(item = item_index + 1, media = %metadata))]
     async fn download_and_send(
         bot: &teloxide::Bot,
@@ -58,42 +97,9 @@ impl MediaSender for TelegramSender {
     type Error = Error;
     type Input = (teloxide::Bot, ChatId, Vec<BotResult<MediaMetadata>>);
 
-    #[instrument(skip_all, fields(total_items = input.2.len()))]
+    #[doc(hidden)]
     async fn send_medias(input: Self::Input) -> BotResult<()> {
         let (bot, chat_id, scraping_results) = input;
-        info!("Sending {} media items", scraping_results.len());
-
-        let mut jobs = JoinSet::new();
-        let bot = Arc::new(bot);
-
-        for (item_index, result) in scraping_results.into_iter().enumerate() {
-            let bot = Arc::clone(&bot);
-            match result {
-                Ok(metadata) => {
-                    debug!("Processing media item");
-                    jobs.spawn(async move {
-                        match Self::download_and_send(&bot, chat_id, metadata, item_index).await {
-                            Ok(_) => debug!("Media item processing completed"),
-                            Err(err) => warn!("Failed to send media item: {err}"),
-                        }
-                    });
-                }
-
-                Err(err) => {
-                    debug!("Processing error for media item: {err}");
-                    jobs.spawn(async move {
-                        match bot.send_message(chat_id, err.to_string()).await {
-                            Ok(_) => debug!("Error message sent"),
-                            Err(err) => warn!("Failed to send error message: {err}"),
-                        }
-                    });
-                }
-            }
-        }
-
-        let results = jobs.join_all().await;
-        info!("Completed: sent {} items", results.len());
-
-        Ok(())
+        TelegramSender::send_medias(bot, chat_id, scraping_results).await
     }
 }
