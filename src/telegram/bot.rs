@@ -2,10 +2,7 @@ use teloxide::{prelude::*, utils::command::BotCommands};
 use tracing::{debug, error, info, instrument};
 
 use crate::{
-    core::{
-        traits::{MediaScraper, MediaSender},
-        types::MediaMetadata,
-    },
+    core::*,
     telegram::*,
     twitter::TwitterScraper,
 };

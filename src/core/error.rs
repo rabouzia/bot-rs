@@ -88,7 +88,7 @@ pub(crate) use unknown;
 
 #[allow(dead_code)]
 #[derive(Debug)]
-pub(crate) enum Error {
+pub enum Error {
     NoMediaFound,
     InvalidLink,
     InvalidUrl,
@@ -102,7 +102,7 @@ pub(crate) enum Error {
 
 // --- Type Aliases ---
 
-pub(crate) type BotResult<T> = Result<T, Error>;
+pub type BotResult<T> = Result<T, Error>;
 
 // --- Trait Impl ---
 

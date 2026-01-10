@@ -6,19 +6,9 @@ use reqwest::Url;
 use serde_json::Value;
 use tracing::{info, instrument};
 
-use crate::{
-    core::{
-        error::{
-            BotResult, Error, custom, file_type_not_supported, invalid_link,
-            invalid_scraper_response, invalid_url, no_media_found,
-        },
-        traits::MediaScraper,
-        types::{MediaKind, MediaMetadata},
-    },
-    telegram::unknown,
-};
+use crate::core::*;
 
-pub(crate) struct TwitterScraper;
+pub struct TwitterScraper;
 
 impl TwitterScraper {
     fn parse_metadata(item: &Value) -> BotResult<MediaMetadata> {

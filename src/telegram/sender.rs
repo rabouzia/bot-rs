@@ -7,14 +7,7 @@ use teloxide::{
 use tokio::task::JoinSet;
 use tracing::{debug, error, info, instrument, warn};
 
-use crate::{
-    core::{
-        error::media_send_failed,
-        traits::MediaSender,
-        types::{MediaKind, MediaMetadata},
-    },
-    telegram::*,
-};
+use crate::core::*;
 
 pub(crate) struct TelegramSender;
 
