@@ -1,26 +1,21 @@
-#![allow(clippy::single_component_path_imports)]
-
 macro_rules! error {
     ($err:expr, $fmt:expr, $($arg:expr),* $(,)?) => {{
-		use ::tracing;
 		let err: $crate::error::BotError = $err;
 		let enum_variant = format!("{err:?}");
 		let cause = format!($fmt, $($arg,)*);
-		tracing::error!("{enum_variant}: {cause}");
+		::tracing::error!("{enum_variant}: {cause}");
 		err
 	}};
     ($err:expr, $cause:expr $(,)?) => {{
-		use ::tracing;
 		let err: $crate::error::BotError = $err;
 		let enum_variant = format!("{err:?}");
 		let cause = format!($cause);
-		tracing::error!("{enum_variant}: {cause}");
+		::tracing::error!("{enum_variant}: {cause}");
 		err
 	}};
 	($err:expr $(,)?) => {{
-		use ::tracing;
 		let err: $crate::error::BotError = $err;
-		tracing::error!("{err:?}");
+		::tracing::error!("{err:?}");
 		err
 	}};
 }
@@ -43,4 +38,5 @@ macro_rules! error_macro {
 		}
 	};
 }
+
 pub(crate) use error_macro;

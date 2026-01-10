@@ -13,7 +13,8 @@ pub enum BotError {
     InvalidScraperResponse,
     FileTypeNotSupported,
     InvalidMedia,
-    Other
+    Other,
+    Custom(String),
 }
 
 impl fmt::Display for BotError {
@@ -27,6 +28,7 @@ impl fmt::Display for BotError {
             BotError::FileTypeNotSupported => write!(f, "The media format is not currently supported."),
             BotError::InvalidMedia => write!(f, "The media might be corrupted or in an unrecognized format."),
             BotError::Other => write!(f, "An unexpected error occured, please retry later..."),
+            BotError::Custom(msg) => write!(f, "{msg}"),
         }
     }
 }
@@ -43,6 +45,14 @@ error_macro!(file_type_not_supported BotError::FileTypeNotSupported);
 error_macro!(invalid_media BotError::InvalidMedia);
 error_macro!(other BotError::Other);
 
+macro_rules! custom {
+    ($($arg:tt)*) => {{
+        let err = format!($($arg)*);
+        tracing::error!("{err}");
+        BotError::Custom(err)
+    }};
+}
+
 pub(crate) use no_media_found;
 pub(crate) use invalid_link;
 pub(crate) use invalid_url;
@@ -50,3 +60,4 @@ pub(crate) use media_send_failed;
 pub(crate) use invalid_scraper_response;
 pub(crate) use file_type_not_supported;
 pub(crate) use other;
+pub(crate) use custom;

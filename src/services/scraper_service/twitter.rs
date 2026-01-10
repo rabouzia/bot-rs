@@ -27,13 +27,13 @@ impl TryFrom<&serde_json::Value> for TwitterMediaMetadata {
 
             _ => {
                 return Err(error::file_type_not_supported!(
-                    "file type not supported: {type_}"                    
+                    "file type not supported: {type_}"
                 ));
             }
         };
 
-        let url =
-            reqwest::Url::parse(url).map_err(|err| error::invalid_scraper_response!("invalid url: {err}"))?;
+        let url = reqwest::Url::parse(url)
+            .map_err(|err| error::invalid_scraper_response!("invalid url: {err}"))?;
 
         let id = url
             .as_str()
@@ -50,20 +50,18 @@ impl TryFrom<&serde_json::Value> for TwitterMediaMetadata {
 pub struct Twitter;
 
 impl Twitter {
-    
     #[instrument(skip_all)]
-    pub async fn scrape(handle: &Url) -> BotResult<Vec<BotResult<MediaMetadata>>> {
-        tracing::info!("Starting Twitter media scraping for handle: {handle}");
+    pub async fn scrape(handle: &String) -> BotResult<Vec<BotResult<MediaMetadata>>> {
+        let url = Url::parse(handle).map_err(|err| error::invalid_url!("{err}"))?;
 
-        info!("starting media scraping");
+        info!("Starting media scraping");
 
         let scraping_results = {
-
-            // let post_id = Twitter::parse_post_id_from_url(handle)?;
-            let post_id = handle.path_segments()
-                .ok_or_else(|| error::invalid_url!("{handle}"))?
+            let post_id = url
+                .path_segments()
+                .ok_or_else(|| error::invalid_url!("{url}"))?
                 .next_back()
-                .ok_or_else(|| error::invalid_url!("{handle}"))?;
+                .ok_or_else(|| error::invalid_url!("{url}"))?;
 
             let scraper_url = Twitter::scraper_link(post_id)?;
 
@@ -73,7 +71,7 @@ impl Twitter {
         info!("media scraping finished");
 
         if scraping_results.is_empty() {
-            return Err(error::no_media_found!("No media items found for Twitter handle"));
+            return Err(error::no_media_found!());
         }
 
         // Logging
@@ -82,8 +80,10 @@ impl Twitter {
             let success_count = scraping_results.iter().filter(|r| r.is_ok()).count();
             let error_count = total_count - success_count;
 
-            tracing::info!("Twitter scraping completed: {} total, {} successful, {} failed",
-                total_count, success_count, error_count);
+            info!(
+                "Twitter scraping completed: {} total, {} successful, {} failed",
+                total_count, success_count, error_count
+            );
         }
 
         Ok(scraping_results)
@@ -99,6 +99,15 @@ impl Twitter {
             .json()
             .await
             .map_err(|err| error::other!("{err}"))?;
+
+        if let Some(false) = response_json.get("success").and_then(|v| v.as_bool()) {
+            let error_msg = response_json
+                .get("error")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown error");
+
+            return Err(error::custom!("{error_msg}"));
+        }
 
         let data = response_json
             .get("data")
@@ -122,7 +131,6 @@ impl Twitter {
     fn scraper_link(post_id: &str) -> Result<reqwest::Url, BotError> {
         let x_scrapper_link = dotenv!("X_LINK");
         let link = format!("{x_scrapper_link}{post_id}");
-        Url::from_str(&link)
-            .map_err(|err| error::invalid_link!("{link}: {err}"))
+        Url::from_str(&link).map_err(|err| error::invalid_link!("{link}: {err}"))
     }
 }

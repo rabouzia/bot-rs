@@ -1,4 +1,4 @@
-use crate::error::BotError;
+use crate::error::{BotError, media_send_failed};
 use crate::{BotResult, error};
 use crate::services::scraper_service::{MediaKind, MediaMetadata};
 use teloxide::{prelude::Requester, Bot};
@@ -88,41 +88,41 @@ impl DefaultMessageService {
     }
 }
 
-#[instrument(skip_all, fields(metadata_url = %metadata.url(), media_kind = ?metadata.kind(), chat_id))]
+#[instrument(skip_all, fields(metadata_url = %metadata.url(), media_kind = ?metadata.kind()))]
 async fn download_and_send(
     bot: Bot,
     chat_id: ChatId,
     metadata: MediaMetadata,
 ) -> BotResult<Message> {
-    debug!("Starting media download and send process for: {}", metadata.url());
+    debug!("Starting media download and send process");
 
     let input_file = InputFile::url(metadata.url().clone());
 
     let result = match metadata.kind() {
         MediaKind::Image => {
-            debug!("Sending image: {}", metadata.url());
+            debug!("Sending image");
             bot.send_photo(chat_id, input_file).await
         }
         MediaKind::Video => {
-            debug!("Sending video: {}", metadata.url());
+            debug!("Sending video");
             bot.send_video(chat_id, input_file).await
         }
     };
 
     match result {
         Ok(message) => {
-            info!("Media successfully sent to chat {}: {}", chat_id.0, metadata.url());
+            info!("Media successfully sent to chat");
             Ok(message)
         }
         Err(err) => {
-            warn!("Failed to send media to chat {} - URL: {}, error: {}", chat_id.0, metadata.url(), err);
+            warn!("Failed to send media to chat");
 
             let error_msg = format!("Failed to send media: {}", err);
             if let Err(send_err) = bot.send_message(chat_id, error_msg).await {
-                error!("Failed to send error message to chat {}: {}", chat_id.0, send_err);
+                error!("Failed to send error message to chat: {send_err}");
             }
 
-            Err(error::media_send_failed!())
+            Err(media_send_failed!("{err}"))
         }
     }
 }
