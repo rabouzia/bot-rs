@@ -1,1 +1,2 @@
-pub mod scraper;
+mod scraper;
+pub use scraper::TwitterScraper;

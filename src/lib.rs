@@ -5,5 +5,4 @@ pub use core::traits::{MediaScraper, MediaSender};
 pub mod telegram;
 
 #[cfg(feature = "twitter")]
-mod twitter;
-pub use twitter::scraper::TwitterScraper;
+pub mod twitter;
