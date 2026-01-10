@@ -20,6 +20,7 @@ pub(crate) enum Command {
     /// Download medias attached to the post
     #[command(aliases = ["t"], hide_aliases)]
     Twitter(String),
+
     // /// Handle a insta link
     // #[command(parse_with = "split", alias = "insta")]
     // Instagram,
@@ -79,17 +80,33 @@ impl Default for TelegramBot {
 async fn answer(bot: teloxide::Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
     info!("Received command {cmd}");
 
-    if matches!(cmd, Command::Help) {
-        let help_msg = Command::descriptions().to_string();
-        if let Err(send_err) = bot.send_message(msg.chat.id, &help_msg).await {
-            error!("Failed to send help message: {send_err}");
+macro_rules! send_msg {
+    ($text:expr) => {{
+        if let Err(err) = bot.send_message(msg.chat.id, $text.to_string()).await {
+            error!("Failed to send message: {err}");
         }
-        return Ok(());
+
+        ResponseResult::Ok(())
+    }};
+}
+
+    if matches!(cmd, Command::Help) {
+        return send_msg!(Command::descriptions().to_string());
     }
 
-    let scraping_results: BotResult<Vec<BotResult<MediaMetadata>>> = match cmd {
-        Command::Twitter(handle) => TwitterScraper::scrape(handle).await,
-        _ => return Ok(()), // Should be handled or Help
+    let scraping_results = match cmd {
+        Command::Twitter(url) => {
+            #[cfg(feature = "twitter")]
+            {
+                TwitterScraper::scrape(url).await
+            }
+            #[cfg(not(feature = "twitter"))]
+            {
+                return send_msg!(BotError::FeatureNotEnabled);
+            }
+        }
+
+        _ => return send_msg!(BotError::CommandNotFound),
     };
 
     // Check main result error (e.g. no media found)
@@ -98,13 +115,7 @@ async fn answer(bot: teloxide::Bot, msg: Message, cmd: Command) -> ResponseResul
             info!("Scraping completed, found {} media items", res.len());
             res
         }
-        Err(err) => {
-            error!("Scraping failed: {err}");
-            if let Err(send_err) = bot.send_message(msg.chat.id, err.to_string()).await {
-                error!("Failed to send error message: {send_err}");
-            }
-            return Ok(());
-        }
+        Err(err) => return send_msg!(err),
     };
 
     // Send results

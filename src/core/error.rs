@@ -89,6 +89,8 @@ pub(crate) use unknown;
 #[allow(dead_code)]
 #[derive(Debug)]
 pub enum BotError {
+    CommandNotFound,
+    FeatureNotEnabled,
     NoMediaFound,
     InvalidLink,
     InvalidUrl,
@@ -109,6 +111,8 @@ pub type BotResult<T> = Result<T, BotError>;
 impl fmt::Display for BotError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let msg = match self {
+            BotError::CommandNotFound => "Command not found.",
+            BotError::FeatureNotEnabled => "This feature is not currently enabled.",
             BotError::NoMediaFound => {
                 "No media items found for this link. The post might be private or not contain any media."
             }
