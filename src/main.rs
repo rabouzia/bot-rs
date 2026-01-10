@@ -1,6 +1,5 @@
 use dotenvy::dotenv;
-use media_bot::{BotTrait, TelegramBot};
-use teloxide::prelude::*;
+use media_bot::telegram::TelegramBot;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
@@ -16,8 +15,7 @@ async fn main() {
         .with_target(true) // Include module target in logs
         .init();
 
-    let bot = Bot::from_env();
-    let telegram_bot = TelegramBot::new(bot);
+    let telegram_bot = TelegramBot::new();
 
     if let Err(e) = telegram_bot.run().await {
         info!("Bot error: {e}");

@@ -5,19 +5,19 @@ use std::str::FromStr;
 use tracing::{info, instrument};
 
 use crate::{
-    BotResult,
     core::{
         traits::MediaScraper,
         types::{MediaKind, MediaMetadata},
     }, telegram,
 };
+
 use dotenvy_macro::dotenv;
 
 pub struct TwitterScraper;
 
 impl TwitterScraper {
-    fn parse_metadata(item: &Value) -> BotResult<MediaMetadata> {
-        let get_index_as_str = |index: &str| -> BotResult<&str> {
+    fn parse_metadata(item: &Value) -> telegram::BotResult<MediaMetadata> {
+        let get_index_as_str = |index: &str| -> telegram::BotResult<&str> {
             item.get(index)
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| telegram::invalid_scraper_response!("missing field {index}"))
@@ -50,7 +50,7 @@ impl TwitterScraper {
     }
 
     #[instrument(skip_all, fields(url = %scraper_url))]
-    async fn scrape_medias_inner(scraper_url: &Url) -> BotResult<Vec<BotResult<MediaMetadata>>> {
+    async fn scrape_medias_inner(scraper_url: &Url) -> telegram::BotResult<Vec<telegram::BotResult<MediaMetadata>>> {
         let response = reqwest::get(scraper_url.as_str())
             .await
             .map_err(|err| telegram::other!("{err}"))?;
@@ -99,7 +99,7 @@ impl TwitterScraper {
 impl MediaScraper for TwitterScraper {
     type Error = telegram::Error;
     type Input = String;
-    type Output = Vec<BotResult<MediaMetadata>>;
+    type Output = Vec<telegram::BotResult<MediaMetadata>>;
 
     async fn scrape(input: Self::Input) -> Result<Self::Output, Self::Error> {
         let url = Url::parse(&input).map_err(|err| telegram::invalid_url!("{err}"))?;

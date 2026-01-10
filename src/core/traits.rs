@@ -10,13 +10,6 @@ pub trait MediaScraper {
 }
 
 #[async_trait]
-pub trait Bot {
-	type Error;
-
-	async fn run(&self) -> Result<(), Self::Error>;
-}
-
-#[async_trait]
 pub trait MediaSender {
 	type Error;
 	type Input;

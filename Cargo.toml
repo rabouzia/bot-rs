@@ -3,9 +3,10 @@ name = "media_bot"
 version = "0.1.0"
 edition = "2024"
 
-[[bin]]
-name = "media_bot"
-path = "src/main.rs"
+[features]
+default = ["telegram"]
+telegram = ["twitter"]
+twitter = ["dep:teloxide"]
 
 [dependencies]
 async-trait = "0.1.89"
@@ -14,7 +15,7 @@ dotenvy_macro = "0.15.7"
 reqwest = { version = "0.12.25", features = ["json"] }
 serde = "1.0.228"
 serde_json = "1.0.145"
-teloxide = { version = "0.17.0", features = ["macros"] }
+teloxide = { version = "0.17.0", features = ["macros"], optional = true }
 tokio = { version = "1.8", features = ["full"] }
 tracing = "0.1.43"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter", "json"] }

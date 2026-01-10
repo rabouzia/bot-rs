@@ -1,5 +1,7 @@
 use std::fmt;
 
+pub type BotResult<T> = Result<T, Error>;
+
 #[allow(dead_code)]
 #[derive(Debug)]
 pub enum Error {
@@ -77,7 +79,7 @@ pub(crate) use error;
 
 macro_rules! error_macro {
 	($name:ident $error:ident) => {
-		$crate::telegram::error::error_macro!(@$name, $error, with $);
+		$crate::telegram::error_macro!(@$name, $error, with $);
 	};
 
 	(@$name:ident, $error:ident, with $dollar:tt) => {
