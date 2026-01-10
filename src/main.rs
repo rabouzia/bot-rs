@@ -17,16 +17,8 @@ async fn main() {
     #[cfg(feature = "telegram")]
     {
         let telegram_bot = media_bot::telegram::TelegramBot::new();
-        jobs.spawn(async move {
-            if let Err(e) = telegram_bot.run().await {
-                tracing::error!("Bot error: {e}");
-            }
-        });
+        jobs.spawn(async move { telegram_bot.run().await });
     }
 
-    while let Some(result) = jobs.join_next().await {
-        if let Err(e) = result {
-            tracing::error!("Bot error: {e}");
-        }
-    }
+    jobs.join_all().await;
 }
