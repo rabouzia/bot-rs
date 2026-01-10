@@ -1,7 +1,9 @@
+use std::str::FromStr;
+
 use async_trait::async_trait;
+use dotenvy_macro::dotenv;
 use reqwest::Url;
 use serde_json::Value;
-use std::str::FromStr;
 use tracing::{info, instrument};
 
 use crate::{
@@ -16,9 +18,7 @@ use crate::{
     telegram::unknown,
 };
 
-use dotenvy_macro::dotenv;
-
-pub struct TwitterScraper;
+pub(crate) struct TwitterScraper;
 
 impl TwitterScraper {
     fn parse_metadata(item: &Value) -> BotResult<MediaMetadata> {
@@ -85,10 +85,7 @@ impl TwitterScraper {
             .as_array()
             .ok_or_else(|| invalid_scraper_response!("invalid field media"))?;
 
-        let medias = json_medias
-            .iter()
-            .map(|json| Self::parse_metadata(json).map(MediaMetadata::from))
-            .collect();
+        let medias = json_medias.iter().map(Self::parse_metadata).collect();
 
         Ok(medias)
     }

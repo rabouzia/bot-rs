@@ -1,17 +1,22 @@
-use std::sync::Arc;
-
-use crate::core::error::media_send_failed;
-use crate::core::traits::MediaSender;
-use crate::core::types::{MediaKind, MediaMetadata};
-use crate::telegram::*;
-
 use async_trait::async_trait;
-use teloxide::prelude::*;
-use teloxide::types::{ChatId, InputFile, Message};
+use std::sync::Arc;
+use teloxide::{
+    prelude::*,
+    types::{ChatId, InputFile, Message},
+};
 use tokio::task::JoinSet;
 use tracing::{debug, error, info, instrument, warn};
 
-pub struct TelegramSender;
+use crate::{
+    core::{
+        error::media_send_failed,
+        traits::MediaSender,
+        types::{MediaKind, MediaMetadata},
+    },
+    telegram::*,
+};
+
+pub(crate) struct TelegramSender;
 
 impl TelegramSender {
     #[instrument(skip_all, fields(item = item_index + 1, media = %metadata))]
@@ -99,5 +104,3 @@ impl MediaSender for TelegramSender {
         Ok(())
     }
 }
-
-impl TelegramSender {}
