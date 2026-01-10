@@ -12,9 +12,12 @@ use crate::core::*;
 pub(crate) struct TelegramSender;
 
 impl TelegramSender {
-
     #[instrument(skip_all, fields(total_items = scraping_results.len()))]
-    async fn send_medias(bot: teloxide::Bot, chat_id: ChatId, scraping_results: Vec<BotResult<MediaMetadata>>) -> BotResult<()> {
+    async fn send_medias(
+        bot: teloxide::Bot,
+        chat_id: ChatId,
+        scraping_results: Vec<BotResult<MediaMetadata>>,
+    ) -> BotResult<()> {
         info!("Sending {} media items", scraping_results.len());
 
         let mut jobs = JoinSet::new();
@@ -94,7 +97,7 @@ impl TelegramSender {
 
 #[async_trait]
 impl MediaSender for TelegramSender {
-    type Error = Error;
+    type Error = BotError;
     type Input = (teloxide::Bot, ChatId, Vec<BotResult<MediaMetadata>>);
 
     #[doc(hidden)]

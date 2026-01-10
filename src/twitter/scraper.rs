@@ -11,7 +11,6 @@ use crate::core::*;
 pub struct TwitterScraper;
 
 impl TwitterScraper {
-
     #[instrument(skip_all, fields(input = %input))]
     async fn scrape(input: String) -> BotResult<Vec<BotResult<MediaMetadata>>> {
         let url = Url::parse(&input).map_err(|err| invalid_url!("{err}"))?;
@@ -120,7 +119,7 @@ impl TwitterScraper {
     }
 
     #[instrument]
-    fn scraper_link(post_id: &str) -> Result<reqwest::Url, Error> {
+    fn scraper_link(post_id: &str) -> Result<reqwest::Url, BotError> {
         let x_scrapper_link = dotenv!("X_LINK");
         let link = format!("{x_scrapper_link}{post_id}");
         Url::from_str(&link).map_err(|err| invalid_link!("{link}: {err}"))
@@ -129,7 +128,7 @@ impl TwitterScraper {
 
 #[async_trait]
 impl MediaScraper for TwitterScraper {
-    type Error = Error;
+    type Error = BotError;
     type Input = String;
     type Output = Vec<BotResult<MediaMetadata>>;
 
