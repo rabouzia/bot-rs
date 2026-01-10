@@ -1,13 +1,10 @@
 use crate::{
-    core::{traits::{Bot as BotTrait, MediaScraper, MediaSender}, types::MediaMetadata},
-    telegram::prelude::*,
+    core::{traits::{MediaScraper, MediaSender}, types::MediaMetadata},
+    telegram::*,
     twitter::scraper::TwitterScraper,
 };
-use async_trait::async_trait;
 use teloxide::{prelude::*, utils::command::BotCommands};
 use tracing::{debug, error, info, instrument};
-
-pub type BotResult<T> = Result<T, Error>;
 
 #[derive(BotCommands, Clone)]
 #[command(
@@ -41,12 +38,23 @@ impl std::fmt::Display for Command {
 }
 
 pub struct TelegramBot {
-    pub bot: Bot,
+    pub bot: teloxide::Bot,
 }
 
 impl TelegramBot {
-    pub fn new(bot: Bot) -> Self {
+    pub fn new() -> Self {
+        Self { bot: teloxide::Bot::from_env() }
+    }
+
+    pub fn from_bot(bot: teloxide::Bot) -> Self {
         Self { bot }
+    }
+
+    pub async fn run(self) -> BotResult<()> {
+        info!("Bot is running...");
+        Command::repl(self.bot, answer).await;
+        info!("Bot shutting down...");
+        Ok(())
     }
 }
 
@@ -59,7 +67,7 @@ impl TelegramBot {
         chat_id = msg.chat.id.0
     )
 )]
-async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
+async fn answer(bot: teloxide::Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
     info!("Received command {cmd}");
 
     if matches!(cmd, Command::Help) {
@@ -99,16 +107,4 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
     debug!("Command completed");
 
     Ok(())
-}
-
-#[async_trait]
-impl BotTrait for TelegramBot {
-    type Error = Error;
-
-    async fn run(&self) -> BotResult<()> {
-        info!("Bot is running...");
-        Command::repl(self.bot.clone(), answer).await;
-        info!("Bot shutting down...");
-        Ok(())
-    }
 }

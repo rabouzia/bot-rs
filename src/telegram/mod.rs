@@ -1,5 +1,9 @@
-pub mod bot;
-pub mod sender;
+mod bot;
+pub use bot::TelegramBot;
+
+mod sender;
+pub use sender::TelegramSender;
+
 mod error;
-pub use error::*;
-pub mod prelude;
+pub use error::{Error, BotResult};
+pub(crate) use error::*;

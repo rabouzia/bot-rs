@@ -1,8 +1,9 @@
 mod core;
-pub use core::traits::{Bot as BotTrait, MediaScraper, MediaSender};
+pub use core::traits::{MediaScraper, MediaSender};
 
-mod telegram;
-pub use telegram::prelude::*;
+#[cfg(feature = "telegram")]
+pub mod telegram;
 
+#[cfg(feature = "twitter")]
 mod twitter;
 pub use twitter::scraper::TwitterScraper;
