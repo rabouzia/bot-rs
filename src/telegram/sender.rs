@@ -1,6 +1,6 @@
 use crate::core::types::{MediaKind, MediaMetadata};
-use crate::error::{BotError, media_send_failed};
-use crate::{BotResult, core::traits::MediaSender};
+use crate::telegram::prelude::*;
+use crate::core::traits::MediaSender;
 
 use async_trait::async_trait;
 use teloxide::prelude::*;
@@ -54,7 +54,7 @@ impl TelegramSender {
 
 #[async_trait]
 impl MediaSender for TelegramSender {
-    type Error = BotError;
+    type Error = Error;
     type Input = (Bot, ChatId, Vec<BotResult<MediaMetadata>>);
 
     #[instrument(skip_all, fields(total_items = input.2.len()))]
