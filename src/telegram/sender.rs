@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use crate::core::types::{MediaKind, MediaMetadata};
-use crate::telegram::error::media_send_failed;
-use crate::telegram::*;
+use crate::core::error::media_send_failed;
 use crate::core::traits::MediaSender;
+use crate::core::types::{MediaKind, MediaMetadata};
+use crate::telegram::*;
 
 use async_trait::async_trait;
 use teloxide::prelude::*;
@@ -19,7 +19,7 @@ impl TelegramSender {
         bot: &teloxide::Bot,
         chat_id: ChatId,
         metadata: MediaMetadata,
-		item_index: usize,
+        item_index: usize,
     ) -> BotResult<Message> {
         debug!("Starting media download and send process");
 
@@ -70,27 +70,27 @@ impl MediaSender for TelegramSender {
 
         for (item_index, result) in scraping_results.into_iter().enumerate() {
             let bot = Arc::clone(&bot);
-			match result {
-				Ok(metadata) => {
-					debug!("Processing media item");
-					jobs.spawn(async move {
-						match Self::download_and_send(&bot, chat_id, metadata, item_index).await {
-							Ok(_) => debug!("Media item processing completed"),
-							Err(err) => warn!("Failed to send media item: {err}"),
-						}
-					});
-				}
+            match result {
+                Ok(metadata) => {
+                    debug!("Processing media item");
+                    jobs.spawn(async move {
+                        match Self::download_and_send(&bot, chat_id, metadata, item_index).await {
+                            Ok(_) => debug!("Media item processing completed"),
+                            Err(err) => warn!("Failed to send media item: {err}"),
+                        }
+                    });
+                }
 
-				Err(err) => {
-					debug!("Processing error for media item: {err}");
-					jobs.spawn(async move {
-						match bot.send_message(chat_id, err.to_string()).await {
-							Ok(_) => debug!("Error message sent"),
-							Err(err) => warn!("Failed to send error message: {err}"),
-						}
-					});
-				}
-	        }
+                Err(err) => {
+                    debug!("Processing error for media item: {err}");
+                    jobs.spawn(async move {
+                        match bot.send_message(chat_id, err.to_string()).await {
+                            Ok(_) => debug!("Error message sent"),
+                            Err(err) => warn!("Failed to send error message: {err}"),
+                        }
+                    });
+                }
+            }
         }
 
         let results = jobs.join_all().await;
