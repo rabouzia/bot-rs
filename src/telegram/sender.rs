@@ -5,7 +5,7 @@ use teloxide::{
     types::{ChatId, InputFile, Message},
 };
 use tokio::task::JoinSet;
-use tracing::{debug, error, info, instrument, warn};
+use tracing::{debug, error, info, instrument};
 
 use crate::core::*;
 
@@ -17,7 +17,7 @@ impl TelegramSender {
         bot: teloxide::Bot,
         chat_id: ChatId,
         scraping_results: Vec<BotResult<MediaMetadata>>,
-    ) -> BotResult<()> {
+    ) -> Vec<ResponseResult<Message>> {
         info!("Sending {} media items", scraping_results.len());
 
         let mut jobs = JoinSet::new();
@@ -28,39 +28,50 @@ impl TelegramSender {
             match result {
                 Ok(metadata) => {
                     debug!("Processing media item");
-                    jobs.spawn(async move {
-                        match Self::download_and_send(&bot, chat_id, metadata, item_index).await {
-                            Ok(_) => debug!("Media item processing completed"),
-                            Err(err) => warn!("Failed to send media item: {err}"),
-                        }
-                    });
+                    jobs.spawn(Self::download_and_send(bot, chat_id, metadata, item_index));
                 }
 
                 Err(err) => {
                     debug!("Processing error for media item: {err}");
-                    jobs.spawn(async move {
-                        match bot.send_message(chat_id, err.to_string()).await {
-                            Ok(_) => debug!("Error message sent"),
-                            Err(err) => warn!("Failed to send error message: {err}"),
-                        }
-                    });
+                    jobs.spawn(async move { bot.send_message(chat_id, err.to_string()).await });
                 }
             }
         }
 
-        let results = jobs.join_all().await;
-        info!("Completed: sent {} items", results.len());
+        let mut results = vec![];
 
-        Ok(())
+        while let Some(result) = jobs.join_next().await {
+            if result.is_err() {
+                continue;
+            }
+
+            let result = result.unwrap();
+
+            if let Err(err) = result.as_ref() {
+                error!("Failed to send message: {err}");
+            }
+
+            results.push(result);
+        }
+
+        // logging
+        {
+            let total = results.len();
+            let successes = results.iter().filter(|r| r.is_ok()).count();
+
+            info!("Media sending summary: {successes}/{total} items successfully delivered");
+        }
+
+        results
     }
 
     #[instrument(skip_all, fields(item = item_index + 1, media = %metadata))]
     async fn download_and_send(
-        bot: &teloxide::Bot,
+        bot: Arc<teloxide::Bot>,
         chat_id: ChatId,
         metadata: MediaMetadata,
         item_index: usize,
-    ) -> BotResult<Message> {
+    ) -> ResponseResult<Message> {
         debug!("Starting media download and send process");
 
         let input_file = InputFile::url(metadata.url.clone());
@@ -82,14 +93,8 @@ impl TelegramSender {
                 Ok(message)
             }
             Err(err) => {
-                warn!("Failed to send media to chat");
-
-                let error_msg = format!("Failed to send media: {}", err);
-                if let Err(send_err) = bot.send_message(chat_id, error_msg).await {
-                    error!("Failed to send error message to chat: {send_err}");
-                }
-
-                Err(media_send_failed!("{err}"))
+                error!("Failed to send media to chat");
+                Err(err)
             }
         }
     }
@@ -97,11 +102,11 @@ impl TelegramSender {
 
 #[async_trait]
 impl MediaSender for TelegramSender {
-    type Error = BotError;
     type Input = (teloxide::Bot, ChatId, Vec<BotResult<MediaMetadata>>);
+    type Output = Vec<ResponseResult<Message>>;
 
     #[doc(hidden)]
-    async fn send_medias(input: Self::Input) -> BotResult<()> {
+    async fn send_medias(input: Self::Input) -> Self::Output {
         let (bot, chat_id, scraping_results) = input;
         TelegramSender::send_medias(bot, chat_id, scraping_results).await
     }

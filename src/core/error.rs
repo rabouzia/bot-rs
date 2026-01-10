@@ -32,9 +32,6 @@ macro_rules! helper_error_macro {
 
     (@$name:ident, $error_type:path, $variant:ident, with $dollar:tt) => {
         macro_rules! $name {
-            () => {{
-                <$error_type>::$variant
-            }};
             ($dollar($dollar arg:expr),* $dollar(,)?) => {
                 $crate::core::error::error!(<$error_type>::$variant, $dollar($dollar arg,)*)
             };
@@ -54,9 +51,16 @@ pub(crate) use error;
 pub(crate) use helper_error_macro;
 
 // Errors builder macros
+helper_error_macro!(
+    command_not_found,
+    crate::core::error::BotError,
+    CommandNotFound
+);
 helper_error_macro!(no_media_found, crate::core::error::BotError, NoMediaFound);
 helper_error_macro!(invalid_link, crate::core::error::BotError, InvalidLink);
 helper_error_macro!(invalid_url, crate::core::error::BotError, InvalidUrl);
+helper_error_macro!(invalid_media, crate::core::error::BotError, InvalidMedia);
+helper_error_macro!(unknown, crate::core::error::BotError, Unknown);
 helper_error_macro!(
     media_send_failed,
     crate::core::error::BotError,
@@ -72,9 +76,8 @@ helper_error_macro!(
     crate::core::error::BotError,
     FileTypeNotSupported
 );
-helper_error_macro!(invalid_media, crate::core::error::BotError, InvalidMedia);
-helper_error_macro!(unknown, crate::core::error::BotError, Unknown);
 
+pub(crate) use command_not_found;
 pub(crate) use file_type_not_supported;
 pub(crate) use invalid_link;
 pub(crate) use invalid_media;
@@ -90,7 +93,6 @@ pub(crate) use unknown;
 #[derive(Debug)]
 pub enum BotError {
     CommandNotFound,
-    FeatureNotEnabled,
     NoMediaFound,
     InvalidLink,
     InvalidUrl,
@@ -112,7 +114,6 @@ impl fmt::Display for BotError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let msg = match self {
             BotError::CommandNotFound => "Command not found.",
-            BotError::FeatureNotEnabled => "This feature is not currently enabled.",
             BotError::NoMediaFound => {
                 "No media items found for this link. The post might be private or not contain any media."
             }

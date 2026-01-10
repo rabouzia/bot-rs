@@ -11,8 +11,8 @@ pub trait MediaScraper {
 
 #[async_trait]
 pub trait MediaSender {
-    type Error;
     type Input;
+    type Output;
 
-    async fn send_medias(input: Self::Input) -> Result<(), Self::Error>;
+    async fn send_medias(input: Self::Input) -> Self::Output;
 }

@@ -1,11 +1,7 @@
 use teloxide::{prelude::*, utils::command::BotCommands};
 use tracing::{debug, error, info, instrument};
 
-use crate::{
-    core::*,
-    telegram::*,
-    twitter::TwitterScraper,
-};
+use crate::{core::*, telegram::*, twitter::TwitterScraper};
 
 #[derive(BotCommands, Clone)]
 #[command(
@@ -20,7 +16,6 @@ pub(crate) enum Command {
     /// Download medias attached to the post
     #[command(aliases = ["t"], hide_aliases)]
     Twitter(String),
-
     // /// Handle a insta link
     // #[command(parse_with = "split", alias = "insta")]
     // Instagram,
@@ -78,35 +73,27 @@ impl Default for TelegramBot {
     )
 )]
 async fn answer(bot: teloxide::Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
+    macro_rules! send_msg {
+        ($msg:expr) => {{
+            if let Err(err) = bot.send_message(msg.chat.id, $msg.to_string()).await {
+                error!("Failed to send message: {err}");
+            }
+
+            ResponseResult::Ok(())
+        }};
+    }
+
     info!("Received command {cmd}");
-
-macro_rules! send_msg {
-    ($text:expr) => {{
-        if let Err(err) = bot.send_message(msg.chat.id, $text.to_string()).await {
-            error!("Failed to send message: {err}");
-        }
-
-        ResponseResult::Ok(())
-    }};
-}
 
     if matches!(cmd, Command::Help) {
         return send_msg!(Command::descriptions().to_string());
     }
 
     let scraping_results = match cmd {
-        Command::Twitter(url) => {
-            #[cfg(feature = "twitter")]
-            {
-                TwitterScraper::scrape(url).await
-            }
-            #[cfg(not(feature = "twitter"))]
-            {
-                return send_msg!(BotError::FeatureNotEnabled);
-            }
-        }
+        #[cfg(feature = "twitter")]
+        Command::Twitter(url) => TwitterScraper::scrape(url).await,
 
-        _ => return send_msg!(BotError::CommandNotFound),
+        _ => return send_msg!(command_not_found!("{cmd}")),
     };
 
     // Check main result error (e.g. no media found)
@@ -120,9 +107,8 @@ macro_rules! send_msg {
 
     // Send results
     let input = (bot.clone(), msg.chat.id, scraping_results);
-    if let Err(e) = TelegramSender::send_medias(input).await {
-        error!("Failed to send media: {e}");
-    }
+
+    let _results = TelegramSender::send_medias(input).await;
 
     debug!("Command completed");
 
