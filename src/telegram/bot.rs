@@ -1,7 +1,5 @@
 use crate::{
-    core::{traits::{MediaScraper, MediaSender}, types::MediaMetadata},
-    telegram::*,
-    twitter::scraper::TwitterScraper,
+    MediaScraper, core::{traits::MediaSender, types::MediaMetadata}, telegram::*, twitter::TwitterScraper
 };
 use teloxide::{prelude::*, utils::command::BotCommands};
 use tracing::{debug, error, info, instrument};
