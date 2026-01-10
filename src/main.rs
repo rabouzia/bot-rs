@@ -1,6 +1,5 @@
 use tokio::task::JoinSet;
 
-#[cfg(feature = "telegram")]
 use media_bot::prelude::*;
 
 #[tokio::main]
