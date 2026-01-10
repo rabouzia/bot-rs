@@ -1,2 +1,2 @@
 mod scraper;
-pub(crate) use scraper::TwitterScraper;
+pub use scraper::TwitterScraper;

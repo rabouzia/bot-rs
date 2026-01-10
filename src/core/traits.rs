@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 #[async_trait]
-pub(crate) trait MediaScraper {
+pub trait MediaScraper {
     type Error;
     type Input;
     type Output;
@@ -10,7 +10,7 @@ pub(crate) trait MediaScraper {
 }
 
 #[async_trait]
-pub(crate) trait MediaSender {
+pub trait MediaSender {
     type Error;
     type Input;
 
