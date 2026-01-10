@@ -2,17 +2,17 @@ use async_trait::async_trait;
 
 #[async_trait]
 pub trait MediaScraper {
-	type Error;
-	type Input;
-	type Output;
+    type Error;
+    type Input;
+    type Output;
 
-	async fn scrape(input: Self::Input) -> Result<Self::Output, Self::Error>;
+    async fn scrape(input: Self::Input) -> Result<Self::Output, Self::Error>;
 }
 
 #[async_trait]
 pub trait MediaSender {
-	type Error;
-	type Input;
+    type Error;
+    type Input;
 
-	async fn send_medias(input: Self::Input) -> Result<(), Self::Error>;
+    async fn send_medias(input: Self::Input) -> Result<(), Self::Error>;
 }
