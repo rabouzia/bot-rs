@@ -1,5 +1,8 @@
 use crate::{
-    MediaScraper, core::{traits::MediaSender, types::MediaMetadata}, telegram::*, twitter::TwitterScraper
+    MediaScraper,
+    core::{traits::MediaSender, types::MediaMetadata},
+    telegram::*,
+    twitter::TwitterScraper,
 };
 use teloxide::{prelude::*, utils::command::BotCommands};
 use tracing::{debug, error, info, instrument};
@@ -41,7 +44,9 @@ pub struct TelegramBot {
 
 impl TelegramBot {
     pub fn new() -> Self {
-        Self { bot: teloxide::Bot::from_env() }
+        Self {
+            bot: teloxide::Bot::from_env(),
+        }
     }
 
     pub fn from_bot(bot: teloxide::Bot) -> Self {
