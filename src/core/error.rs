@@ -45,7 +45,7 @@ macro_rules! helper_error_macro {
 macro_rules! custom {
     ($($arg:tt)*) => {{
         let err = format!($($arg)*);
-        $crate::core::error::error!($crate::core::error::Error::Custom(err))
+        $crate::core::error::error!($crate::core::error::BotError::Custom(err))
     }};
 }
 
@@ -54,26 +54,26 @@ pub(crate) use error;
 pub(crate) use helper_error_macro;
 
 // Errors builder macros
-helper_error_macro!(no_media_found, crate::core::error::Error, NoMediaFound);
-helper_error_macro!(invalid_link, crate::core::error::Error, InvalidLink);
-helper_error_macro!(invalid_url, crate::core::error::Error, InvalidUrl);
+helper_error_macro!(no_media_found, crate::core::error::BotError, NoMediaFound);
+helper_error_macro!(invalid_link, crate::core::error::BotError, InvalidLink);
+helper_error_macro!(invalid_url, crate::core::error::BotError, InvalidUrl);
 helper_error_macro!(
     media_send_failed,
-    crate::core::error::Error,
+    crate::core::error::BotError,
     MediaSendFailed
 );
 helper_error_macro!(
     invalid_scraper_response,
-    crate::core::error::Error,
+    crate::core::error::BotError,
     InvalidScraperResponse
 );
 helper_error_macro!(
     file_type_not_supported,
-    crate::core::error::Error,
+    crate::core::error::BotError,
     FileTypeNotSupported
 );
-helper_error_macro!(invalid_media, crate::core::error::Error, InvalidMedia);
-helper_error_macro!(unknown, crate::core::error::Error, Unknown);
+helper_error_macro!(invalid_media, crate::core::error::BotError, InvalidMedia);
+helper_error_macro!(unknown, crate::core::error::BotError, Unknown);
 
 pub(crate) use file_type_not_supported;
 pub(crate) use invalid_link;
@@ -88,7 +88,7 @@ pub(crate) use unknown;
 
 #[allow(dead_code)]
 #[derive(Debug)]
-pub enum Error {
+pub enum BotError {
     NoMediaFound,
     InvalidLink,
     InvalidUrl,
@@ -102,32 +102,32 @@ pub enum Error {
 
 // --- Type Aliases ---
 
-pub type BotResult<T> = Result<T, Error>;
+pub type BotResult<T> = Result<T, BotError>;
 
 // --- Trait Impl ---
 
-impl fmt::Display for Error {
+impl fmt::Display for BotError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let msg = match self {
-            Error::NoMediaFound => {
+            BotError::NoMediaFound => {
                 "No media items found for this link. The post might be private or not contain any media."
             }
-            Error::InvalidLink => "Invalid link.",
-            Error::InvalidUrl => "Invalid URL.",
-            Error::MediaSendFailed => {
+            BotError::InvalidLink => "Invalid link.",
+            BotError::InvalidUrl => "Invalid URL.",
+            BotError::MediaSendFailed => {
                 "Failed to send media. The media might be unavailable or the format unsupported."
             }
-            Error::InvalidScraperResponse => {
+            BotError::InvalidScraperResponse => {
                 "The scraper returned an unexpected response. The link might be invalid or the content might be unavailable."
             }
-            Error::FileTypeNotSupported => "The media format is not currently supported.",
-            Error::InvalidMedia => "The media might be corrupted or in an unrecognized format.",
-            Error::Unknown => "An unexpected error occured, please retry later...",
-            Error::Custom(msg) => msg,
+            BotError::FileTypeNotSupported => "The media format is not currently supported.",
+            BotError::InvalidMedia => "The media might be corrupted or in an unrecognized format.",
+            BotError::Unknown => "An unexpected error occured, please retry later...",
+            BotError::Custom(msg) => msg,
         };
 
         write!(f, "{msg}")
     }
 }
 
-impl std::error::Error for Error {}
+impl std::error::Error for BotError {}
