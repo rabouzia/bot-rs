@@ -48,11 +48,10 @@ impl TelegramBot {
         Self { bot }
     }
 
-    pub async fn run(self) -> BotResult<()> {
+    pub async fn run(self) {
         info!("Bot is running...");
         Command::repl(self.bot, answer).await;
         info!("Bot shutting down...");
-        Ok(())
     }
 }
 

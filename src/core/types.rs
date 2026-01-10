@@ -1,12 +1,14 @@
 use reqwest::Url;
 use std::fmt::Debug;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub enum MediaKind {
     Image,
     Video,
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct MediaMetadata {
     pub id: String,
