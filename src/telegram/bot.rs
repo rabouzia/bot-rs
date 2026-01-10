@@ -1,13 +1,44 @@
 use crate::{
-    BotResult, Command,
-    core::traits::{Bot as BotTrait, MediaScraper, MediaSender},
-    error::BotError,
-    scrapers::twitter::TwitterScraper,
-    senders::telegram::TelegramSender,
+    core::{traits::{Bot as BotTrait, MediaScraper, MediaSender}, types::MediaMetadata},
+    telegram::prelude::*,
+    twitter::scraper::TwitterScraper,
 };
 use async_trait::async_trait;
 use teloxide::{prelude::*, utils::command::BotCommands};
 use tracing::{debug, error, info, instrument};
+
+pub type BotResult<T> = Result<T, Error>;
+
+#[derive(BotCommands, Clone)]
+#[command(
+    rename_rule = "lowercase",
+    description = "These commands are supported:"
+)]
+pub enum Command {
+    /// Display this text.
+    #[command(aliases = ["h", "?"], hide_aliases)]
+    Help,
+
+    /// Download medias attached to the post
+    #[command(aliases = ["t"], hide_aliases)]
+    Twitter(String),
+    // /// Handle a insta link
+    // #[command(parse_with = "split", alias = "insta")]
+    // Instagram,
+
+    // /// Handle a tiktok link
+    // #[command(aliases = ["tk", "tiktok"])]
+    // Tiktok(String),
+}
+
+impl std::fmt::Display for Command {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Help => write!(f, "/help"),
+            Self::Twitter(arg) => write!(f, "/twitter {arg}"),
+        }
+    }
+}
 
 pub struct TelegramBot {
     pub bot: Bot,
@@ -39,7 +70,7 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
         return Ok(());
     }
 
-    let scraping_results = match cmd {
+    let scraping_results: BotResult<Vec<BotResult<MediaMetadata>>> = match cmd {
         Command::Twitter(handle) => TwitterScraper::scrape(handle).await,
         _ => return Ok(()), // Should be handled or Help
     };
@@ -72,7 +103,7 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
 
 #[async_trait]
 impl BotTrait for TelegramBot {
-    type Error = BotError;
+    type Error = Error;
 
     async fn run(&self) -> BotResult<()> {
         info!("Bot is running...");

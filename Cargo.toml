@@ -5,7 +5,7 @@ edition = "2024"
 
 [[bin]]
 name = "media_bot"
-path = "src/telegram.rs"
+path = "src/main.rs"
 
 [dependencies]
 async-trait = "0.1.89"
