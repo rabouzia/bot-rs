@@ -1,14 +1,13 @@
 use std::str::FromStr;
 
 use async_trait::async_trait;
-use dotenvy_macro::dotenv;
 use reqwest::Url;
 use serde_json::Value;
 use tracing::{info, instrument};
 
 use crate::core::*;
 
-pub struct TwitterScraper;
+pub enum TwitterScraper {}
 
 impl TwitterScraper {
     #[instrument(skip_all, fields(input = %input))]
@@ -118,22 +117,19 @@ impl TwitterScraper {
         Ok(medias)
     }
 
-    #[instrument]
     fn scraper_link(post_id: &str) -> Result<reqwest::Url, BotError> {
-        let x_scrapper_link = dotenv!("X_LINK");
-        let link = format!("{x_scrapper_link}{post_id}");
+        let scraper_link = crate::twitter::config::TWITTER_SCRAPER_LINK;
+        let link = format!("{scraper_link}{post_id}");
         Url::from_str(&link).map_err(|err| invalid_link!("{link}: {err}"))
     }
 }
 
 #[async_trait]
 impl MediaScraper for TwitterScraper {
-    type Error = BotError;
     type Input = String;
-    type Output = Vec<BotResult<MediaMetadata>>;
 
     #[doc(hidden)]
-    async fn scrape(input: Self::Input) -> Result<Self::Output, Self::Error> {
+    async fn scrape(input: Self::Input) -> BotResult<Vec<BotResult<MediaMetadata>>> {
         TwitterScraper::scrape(input).await
     }
 }
