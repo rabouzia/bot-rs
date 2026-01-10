@@ -1,18 +1,21 @@
+use teloxide::{prelude::*, utils::command::BotCommands};
+use tracing::{debug, error, info, instrument};
+
 use crate::{
-    MediaScraper,
-    core::{traits::MediaSender, types::MediaMetadata},
+    core::{
+        traits::{MediaScraper, MediaSender},
+        types::MediaMetadata,
+    },
     telegram::*,
     twitter::TwitterScraper,
 };
-use teloxide::{prelude::*, utils::command::BotCommands};
-use tracing::{debug, error, info, instrument};
 
 #[derive(BotCommands, Clone)]
 #[command(
     rename_rule = "lowercase",
     description = "These commands are supported:"
 )]
-pub enum Command {
+pub(crate) enum Command {
     /// Display this text.
     #[command(aliases = ["h", "?"], hide_aliases)]
     Help,
@@ -29,17 +32,9 @@ pub enum Command {
     // Tiktok(String),
 }
 
-impl std::fmt::Display for Command {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Help => write!(f, "/help"),
-            Self::Twitter(arg) => write!(f, "/twitter {arg}"),
-        }
-    }
-}
-
+#[derive(Debug, Clone)]
 pub struct TelegramBot {
-    pub bot: teloxide::Bot,
+    bot: teloxide::Bot,
 }
 
 impl TelegramBot {
@@ -57,6 +52,21 @@ impl TelegramBot {
         info!("Bot is running...");
         Command::repl(self.bot, answer).await;
         info!("Bot shutting down...");
+    }
+}
+
+impl std::fmt::Display for Command {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Help => write!(f, "/help"),
+            Self::Twitter(arg) => write!(f, "/twitter {arg}"),
+        }
+    }
+}
+
+impl Default for TelegramBot {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -93,7 +103,7 @@ async fn answer(bot: teloxide::Bot, msg: Message, cmd: Command) -> ResponseResul
         }
         Err(err) => {
             error!("Scraping failed: {err}");
-            if let Err(send_err) = bot.send_message(msg.chat.id, &err.to_string()).await {
+            if let Err(send_err) = bot.send_message(msg.chat.id, err.to_string()).await {
                 error!("Failed to send error message: {send_err}");
             }
             return Ok(());

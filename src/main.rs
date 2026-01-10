@@ -1,5 +1,8 @@
 use tokio::task::JoinSet;
 
+#[cfg(feature = "telegram")]
+use media_bot::telegram::TelegramBot;
+
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
@@ -16,7 +19,7 @@ async fn main() {
 
     #[cfg(feature = "telegram")]
     {
-        let telegram_bot = media_bot::telegram::TelegramBot::new();
+        let telegram_bot = TelegramBot::new();
         jobs.spawn(async move { telegram_bot.run().await });
     }
 

@@ -1,19 +1,20 @@
-use reqwest::Url;
 use std::fmt::Debug;
+
+use reqwest::Url;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
-pub enum MediaKind {
+pub(crate) enum MediaKind {
     Image,
     Video,
 }
 
 #[allow(dead_code)]
 #[derive(Debug)]
-pub struct MediaMetadata {
-    pub id: String,
-    pub kind: MediaKind,
-    pub url: Url,
+pub(crate) struct MediaMetadata {
+    pub(crate) id: String,
+    pub(crate) kind: MediaKind,
+    pub(crate) url: Url,
 }
 
 impl std::fmt::Display for MediaMetadata {
