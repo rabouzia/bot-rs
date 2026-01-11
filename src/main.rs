@@ -1,6 +1,7 @@
 use tokio::task::JoinSet;
 
-use media_bot::prelude::*;
+#[cfg(feature = "telegram")]
+use media_bot::telegram::TelegramBot;
 
 #[tokio::main]
 async fn main() {
