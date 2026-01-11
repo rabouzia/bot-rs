@@ -1,12 +1,13 @@
 use std::str::FromStr;
 
 use async_trait::async_trait;
-use dotenvy_macro::dotenv;
 use reqwest::Url;
 use serde_json::Value;
 use tracing::{info, instrument};
 
 use crate::core::*;
+
+const X_LINK: &str = "https://www.twitter-viewer.com/api/x/tweet?tweetId=";
 
 pub struct TwitterScraper;
 
@@ -120,8 +121,7 @@ impl TwitterScraper {
 
     #[instrument]
     fn scraper_link(post_id: &str) -> Result<reqwest::Url, BotError> {
-        let x_scrapper_link = dotenv!("X_LINK");
-        let link = format!("{x_scrapper_link}{post_id}");
+        let link = format!("{X_LINK}{post_id}");
         Url::from_str(&link).map_err(|err| invalid_link!("{link}: {err}"))
     }
 }
