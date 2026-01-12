@@ -6,7 +6,7 @@ edition = "2024"
 [features]
 default = ["telegram"]
 telegram = ["dep:teloxide", "twitter"]  
-twitter = []  
+twitter = []
 
 [dependencies]
 async-trait = "0.1.89"

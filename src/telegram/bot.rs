@@ -14,8 +14,10 @@ pub(crate) enum Command {
     Help,
 
     /// Download medias attached to the post
+    #[cfg(feature = "twitter")]
     #[command(aliases = ["t"], hide_aliases)]
     Twitter(String),
+
     // /// Handle a insta link
     // #[command(parse_with = "split", alias = "insta")]
     // Instagram,
@@ -52,6 +54,8 @@ impl std::fmt::Display for Command {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Help => write!(f, "/help"),
+
+            #[cfg(feature = "twitter")]
             Self::Twitter(arg) => write!(f, "/twitter {arg}"),
         }
     }
@@ -76,7 +80,9 @@ async fn answer(bot: teloxide::Bot, msg: Message, cmd: Command) -> ResponseResul
     macro_rules! send_msg {
         ($msg:expr) => {{
             if let Err(err) = bot.send_message(msg.chat.id, $msg.to_string()).await {
-                error!("Failed to send message: {err}");
+                error!("Failed to send response: {err}");
+            } else {
+                info!("Response succesfully send")
             }
 
             ResponseResult::Ok(())
@@ -89,7 +95,7 @@ async fn answer(bot: teloxide::Bot, msg: Message, cmd: Command) -> ResponseResul
         return send_msg!(Command::descriptions().to_string());
     }
 
-    let scraping_results = match cmd {
+    let scraping_results: BotResult<Vec<BotResult<MediaMetadata>>> = match cmd {
         #[cfg(feature = "twitter")]
         Command::Twitter(url) => TwitterScraper::scrape(url).await,
 

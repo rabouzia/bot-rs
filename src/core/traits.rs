@@ -1,12 +1,12 @@
 use async_trait::async_trait;
 
+use crate::core::{BotResult, MediaMetadata};
+
 #[async_trait]
 pub trait MediaScraper {
-    type Error;
     type Input;
-    type Output;
 
-    async fn scrape(input: Self::Input) -> Result<Self::Output, Self::Error>;
+    async fn scrape(input: Self::Input) -> BotResult<Vec<BotResult<MediaMetadata>>>;
 }
 
 #[async_trait]

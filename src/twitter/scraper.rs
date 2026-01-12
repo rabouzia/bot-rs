@@ -128,12 +128,10 @@ impl TwitterScraper {
 
 #[async_trait]
 impl MediaScraper for TwitterScraper {
-    type Error = BotError;
     type Input = String;
-    type Output = Vec<BotResult<MediaMetadata>>;
 
     #[doc(hidden)]
-    async fn scrape(input: Self::Input) -> Result<Self::Output, Self::Error> {
+    async fn scrape(input: Self::Input) -> BotResult<Vec<BotResult<MediaMetadata>>> {
         TwitterScraper::scrape(input).await
     }
 }
