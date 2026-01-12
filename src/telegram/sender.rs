@@ -5,7 +5,7 @@ use teloxide::{
     types::{ChatId, InputFile, Message},
 };
 use tokio::task::JoinSet;
-use tracing::{Instrument, debug, error, info, instrument};
+use tracing::{Instrument, debug, error, info, instrument, warn};
 
 use crate::core::*;
 
@@ -60,7 +60,11 @@ impl TelegramSender {
             let total = results.len();
             let successes = results.iter().filter(|r| r.is_ok()).count();
 
-            info!("Media sending summary: {successes}/{total} items successfully delivered");
+            if total == successes {
+                info!("Media sending summary: {successes}/{total} items successfully delivered");
+            } else {
+                warn!("Media sending summary: {successes}/{total} items successfully delivered");
+            }
         }
 
         results
@@ -94,7 +98,21 @@ impl TelegramSender {
                 Ok(message)
             }
             Err(err) => {
-                error!("Failed to send media to chat");
+                error!("Failed to send media to chat: {err}");
+                debug!("Sending error message to chat");
+
+                use teloxide::{RequestError, ApiError};
+                let err_msg = match err {
+                    // scraper error (most likely invalid url given by user)
+                    RequestError::Api(ApiError::Unknown(_)) => BotError::InvalidUrl,
+
+                    _ => BotError::Unknown,
+                };
+
+                if let Err(err) = bot.send_message(chat_id, err_msg.to_string()).await {
+                    error!("Failed to send error message to chat: {err}");
+                }
+
                 Err(err)
             }
         }

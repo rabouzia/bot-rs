@@ -15,12 +15,12 @@ pub(crate) enum Command {
     #[command(aliases = ["h", "?"], hide_aliases)]
     Help,
 
-    /// Download medias attached to the post
+    /// Download media attached to the post
     #[cfg(feature = "twitter")]
     #[command(aliases = ["t"], hide_aliases)]
     Twitter(String),
 
-    /// Handle a tiktok link
+    /// Handle a TikTok link
     #[cfg(feature = "tiktok")]
     #[command(aliases = ["tk"], hide_aliases)]
     Tiktok(String),
@@ -88,7 +88,7 @@ async fn answer(bot: teloxide::Bot, msg: Message, cmd: Command) -> ResponseResul
             if let Err(err) = bot.send_message(msg.chat.id, $msg.to_string()).await {
                 error!("Failed to send response: {err}");
             } else {
-                info!("Response succesfully send")
+                info!("Response successfully sent");
             }
 
             ResponseResult::Ok(())

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use reqwest::Url;
 use serde_json::Value;
-use tracing::{debug, info, instrument};
+use tracing::{debug, info, instrument, warn};
 
 use crate::core::*;
 
@@ -10,8 +10,6 @@ pub enum TwitterScraper {}
 impl TwitterScraper {
     #[instrument(skip_all, fields(arg = %arg))]
     async fn get_medias_metadata(arg: String) -> BotResult<Vec<BotResult<MediaMetadata>>> {
-        info!("Starting Twitter media Metadata retrieving");
-
         let url = Url::parse(&arg).map_err(|err| invalid_url!("{err}"))?;
 
         debug!("Twitter url: {url}");
@@ -77,8 +75,8 @@ impl TwitterScraper {
         {
             let error_msg = response_json
                 .get("error")
-                .and_then(|v| v.as_str())
-                .unwrap_or("unknown error");
+                .map(ToString::to_string)
+                .unwrap_or(BotError::Unknown.to_string());
 
             return Err(custom!("{error_msg}"));
         }
@@ -93,16 +91,8 @@ impl TwitterScraper {
             .as_array()
             .ok_or_else(|| invalid_scraper_response!("invalid field media"))?;
 
-        let medias: Vec<BotResult<MediaMetadata>> = json_medias.iter().map(Self::parse_metadata).collect();
-
-        // Logging
-        {
-            let total_count = medias.len();
-            let success_count = medias.iter().filter(|r| r.is_ok()).count();
-            let error_count = total_count - success_count;
-
-            info!("Medias scraping results: {} total, {} successful, {} failed", total_count, success_count, error_count);
-        }
+        let medias: Vec<BotResult<MediaMetadata>> =
+            json_medias.iter().map(Self::parse_metadata).collect();
 
         Ok(medias)
     }
@@ -119,6 +109,30 @@ impl MediaScraper for TwitterScraper {
     type Input = String;
 
     async fn get_medias(arg: Self::Input) -> BotResult<Vec<BotResult<MediaMetadata>>> {
-        TwitterScraper::get_medias_metadata(arg).await
+        info!("Starting Twitter media metadata retrieving");
+
+        let result = TwitterScraper::get_medias_metadata(arg).await;
+
+        if let Ok(medias) = &result {
+            let total_count = medias.len();
+            let success_count = medias.iter().filter(|r| r.is_ok()).count();
+            let error_count = total_count - success_count;
+
+            if error_count == 0 {
+                info!(
+                    "Medias scraping results: {} total, {} successful, {} failed",
+                    total_count, success_count, error_count
+                );
+            } else {
+                warn!(
+                    "Medias scraping results: {} total, {} successful, {} failed",
+                    total_count, success_count, error_count
+                );
+            }
+        } else {
+            warn!("Media scraping results: failed to retrieve media");
+        }
+
+        result
     }
 }
