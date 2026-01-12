@@ -6,7 +6,7 @@ use crate::core::{BotResult, MediaMetadata};
 pub trait MediaScraper {
     type Input;
 
-    async fn scrape(input: Self::Input) -> BotResult<Vec<BotResult<MediaMetadata>>>;
+    async fn get_medias(input: Self::Input) -> BotResult<Vec<BotResult<MediaMetadata>>>;
 }
 
 #[async_trait]

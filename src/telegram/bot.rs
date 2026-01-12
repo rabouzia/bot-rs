@@ -103,10 +103,10 @@ async fn answer(bot: teloxide::Bot, msg: Message, cmd: Command) -> ResponseResul
 
     let scraping_results: BotResult<Vec<BotResult<MediaMetadata>>> = match cmd {
         #[cfg(feature = "twitter")]
-        Command::Twitter(arg) => TwitterScraper::scrape(arg).await,
+        Command::Twitter(arg) => TwitterScraper::get_medias(arg).await,
 
         #[cfg(feature = "tiktok")]
-        Command::Tiktok(arg) => TikTokScraper::scrape(arg).await,
+        Command::Tiktok(arg) => TikTokScraper::get_medias(arg).await,
 
         _ => return send_msg!(command_not_found!("{cmd}")),
     };
