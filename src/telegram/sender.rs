@@ -27,13 +27,20 @@ impl TelegramSender {
             let bot = Arc::clone(&bot);
             match result {
                 Ok(metadata) => {
-                    jobs.spawn(Self::download_and_send(bot, chat_id, metadata, item_index).in_current_span());
+                    jobs.spawn(
+                        Self::download_and_send(bot, chat_id, metadata, item_index)
+                            .in_current_span(),
+                    );
                 }
 
                 Err(err) => {
                     // Request<Payload = SendMessage, Err = Self::Err>
                     jobs.spawn(async move {
-                        let result = bot.send_message(chat_id, err.to_string()).into_future().in_current_span().await;
+                        let result = bot
+                            .send_message(chat_id, err.to_string())
+                            .into_future()
+                            .in_current_span()
+                            .await;
                         if let Err(err) = result {
                             warn!("Failed to send error message to chat: {err}");
                             return Err(err);
@@ -103,8 +110,8 @@ impl TelegramSender {
             }
             Err(err) => {
                 warn!("Failed to send media to chat: {err}");
-                
-                use teloxide::{ RequestError, ApiError };
+
+                use teloxide::{ApiError, RequestError};
                 let err_msg = match err {
                     // scraper error (most likely invalid url given by user)
                     RequestError::Api(ApiError::Unknown(_)) => BotError::InvalidUrl,

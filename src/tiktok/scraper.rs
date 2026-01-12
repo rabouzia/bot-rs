@@ -41,7 +41,11 @@ impl TikTokScraper {
                 Self::get_tiktok_url_from_redirection(&url).await?
             }
 
-            _ => return Err(invalid_url!("url domain should be www.tiktok.com, vm.tiktok.com or vt.tiktok.com")),
+            _ => {
+                return Err(invalid_url!(
+                    "url domain should be www.tiktok.com, vm.tiktok.com or vt.tiktok.com"
+                ));
+            }
         };
 
         Self::validate_tiktok_url(&tiktok_url)?;
@@ -94,7 +98,9 @@ impl TikTokScraper {
     fn validate_tiktok_url(url: &Url) -> BotResult<()> {
         macro_rules! bail_invalid_url {
             () => {
-                return Err(invalid_url!("url should look like 'https://www.tiktok.com/[@username/]video/123456789'"));
+                return Err(invalid_url!(
+                    "url should look like 'https://www.tiktok.com/[@username/]video/123456789'"
+                ));
             };
         }
 
@@ -135,20 +141,27 @@ impl TikTokScraper {
 
     #[instrument(name = "validate_url", skip_all, fields(url = %url))]
     fn validate_redirection_url(url: &Url) -> BotResult<()> {
-        let domain = url.domain()
+        let domain = url
+            .domain()
             .ok_or_else(|| invalid_url!("url domain should be vm.tiktok.com or vt.tiktok.com"))?;
 
         if domain != "vm.tiktok.com" && domain != "vt.tiktok.com" {
-            return Err(invalid_url!("url domain should be vm.tiktok.com or vt.tiktok.com"));
+            return Err(invalid_url!(
+                "url domain should be vm.tiktok.com or vt.tiktok.com"
+            ));
         }
 
         let path_segments = url.path().split('/').collect::<Vec<_>>();
         if path_segments.len() != 1 {
-            return Err(invalid_url!("url path should look like 'https://vm.tiktok.com/ABC123'"));
+            return Err(invalid_url!(
+                "url path should look like 'https://vm.tiktok.com/ABC123'"
+            ));
         }
 
         if path_segments[0].len() < 6 || !path_segments[0].chars().all(|c| c.is_alphanumeric()) {
-            return Err(invalid_url!("url path should look like 'https://vm.tiktok.com/ABC123'"));
+            return Err(invalid_url!(
+                "url path should look like 'https://vm.tiktok.com/ABC123'"
+            ));
         }
 
         Ok(())

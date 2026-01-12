@@ -43,8 +43,7 @@ impl TelegramBot {
                 .filter_command::<Command>()
                 .endpoint(command_handler);
 
-            let default_handler = Update::filter_message()
-                .endpoint(default_handler);
+            let default_handler = Update::filter_message().endpoint(default_handler);
 
             dptree::entry()
                 .branch(command_handler)

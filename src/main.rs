@@ -24,7 +24,6 @@ async fn main() {
 }
 
 fn tracing_subcriber() -> impl SubscriberInitExt {
-
     let filter_layer = tracing_subscriber::filter::Targets::new()
         // .with_filter(EnvFilter::from_default_env());
         .with_target("media_bot", tracing::Level::DEBUG);
