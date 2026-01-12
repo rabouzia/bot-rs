@@ -4,7 +4,7 @@ A small project to explore the world of Telegram, Discord, Instagram, X (formerl
 
 ## ☀️ Overview
 
-Bot-RS is a cross-platform bot framework that scrapes real-time data from Instagram, X (formerly Twitter), and TikTok, delivering it to users through stylish and intuitive bots — whether you’re chatting on Telegram or hanging out on Discord.
+Bot-RS is a cross-platform bot framework that scrapes real-time data from Instagram, X, and TikTok, delivering it to users through stylish and intuitive bots — whether you’re chatting on Telegram or hanging out on Discord.
 
 ## 🚀 Quick Start
 
@@ -24,7 +24,8 @@ cargo run
 Once the bot is running, you can interact with it using the following commands:
 
 *   `/help` (aliases: `/h`, `/?`) - Display available commands
-*   `/twitter <url>` (alias: `/t`) - Download media from a X (Twitter) post
+*   `/twitter <url>` (alias: `/t`) - Download media from a X post
+*   `/tiktok <url>` (alias: `/tk`) - Download media from a TikTok post
 
 ## 🌍 Why this project?
 
