@@ -5,7 +5,7 @@ use teloxide::{
     types::{ChatId, InputFile, Message},
 };
 use tokio::task::JoinSet;
-use tracing::{Instrument, debug, error, info, instrument, warn};
+use tracing::{Instrument, debug, info, instrument, warn};
 
 use crate::core::*;
 
@@ -27,14 +27,20 @@ impl TelegramSender {
             let bot = Arc::clone(&bot);
             match result {
                 Ok(metadata) => {
-                    debug!("Processing media item");
                     jobs.spawn(Self::download_and_send(bot, chat_id, metadata, item_index).in_current_span());
                 }
 
                 Err(err) => {
-                    debug!("Processing error for media item: {err}");
                     // Request<Payload = SendMessage, Err = Self::Err>
-                    jobs.spawn(bot.send_message(chat_id, err.to_string()).into_future().in_current_span());
+                    jobs.spawn(async move {
+                        let result = bot.send_message(chat_id, err.to_string()).into_future().in_current_span().await;
+                        if let Err(err) = result {
+                            warn!("Failed to send error message to chat: {err}");
+                            return Err(err);
+                        }
+
+                        result
+                    });
                 }
             }
         }
@@ -49,7 +55,7 @@ impl TelegramSender {
             let result = result.unwrap();
 
             if let Err(err) = result.as_ref() {
-                error!("Failed to send message: {err}");
+                warn!("Failed to send message: {err}");
             }
 
             results.push(result);
@@ -77,8 +83,6 @@ impl TelegramSender {
         metadata: MediaMetadata,
         item_index: usize,
     ) -> ResponseResult<Message> {
-        debug!("Starting media download and send process");
-
         let input_file = InputFile::url(metadata.url.clone());
 
         let result = match metadata.kind {
@@ -98,10 +102,9 @@ impl TelegramSender {
                 Ok(message)
             }
             Err(err) => {
-                error!("Failed to send media to chat: {err}");
-                debug!("Sending error message to chat");
-
-                use teloxide::{RequestError, ApiError};
+                warn!("Failed to send media to chat: {err}");
+                
+                use teloxide::{ RequestError, ApiError };
                 let err_msg = match err {
                     // scraper error (most likely invalid url given by user)
                     RequestError::Api(ApiError::Unknown(_)) => BotError::InvalidUrl,
@@ -110,7 +113,7 @@ impl TelegramSender {
                 };
 
                 if let Err(err) = bot.send_message(chat_id, err_msg.to_string()).await {
-                    error!("Failed to send error message to chat: {err}");
+                    warn!("Failed to send error message to chat: {err}");
                 }
 
                 Err(err)

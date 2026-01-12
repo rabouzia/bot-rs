@@ -1,5 +1,5 @@
 use teloxide::{prelude::*, utils::command::BotCommands};
-use tracing::{debug, error, info, instrument};
+use tracing::{debug, info, instrument, warn};
 
 #[cfg(feature = "tiktok")]
 use crate::tiktok::TikTokScraper;
@@ -24,31 +24,39 @@ pub(crate) enum Command {
     #[cfg(feature = "tiktok")]
     #[command(aliases = ["tk"], hide_aliases)]
     Tiktok(String),
-
     // /// Handle a insta link
     // #[command(parse_with = "split", alias = "insta")]
     // Instagram,
 }
 
 #[derive(Debug, Clone)]
-pub struct TelegramBot {
-    bot: teloxide::Bot,
-}
+pub enum TelegramBot {}
 
 impl TelegramBot {
-    pub fn new() -> Self {
-        Self {
-            bot: teloxide::Bot::from_env(),
-        }
+    pub async fn run() {
+        Self::run_with(teloxide::Bot::from_env()).await;
     }
 
-    pub fn from_bot(bot: teloxide::Bot) -> Self {
-        Self { bot }
-    }
+    pub async fn run_with(bot: teloxide::Bot) {
+        let dptree_entry = {
+            let command_handler = Update::filter_message()
+                .filter_command::<Command>()
+                .endpoint(command_handler);
 
-    pub async fn run(self) {
+            let default_handler = Update::filter_message()
+                .endpoint(default_handler);
+
+            dptree::entry()
+                .branch(command_handler)
+                .branch(default_handler)
+        };
+
+        let mut dispatcher = Dispatcher::builder(bot, dptree_entry)
+            .enable_ctrlc_handler()
+            .build();
+
         info!("Bot is running...");
-        Command::repl(self.bot, answer).await;
+        dispatcher.dispatch().await;
         info!("Bot shutting down...");
     }
 }
@@ -67,12 +75,6 @@ impl std::fmt::Display for Command {
     }
 }
 
-impl Default for TelegramBot {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 #[instrument(
     skip_all,
     fields(
@@ -82,11 +84,11 @@ impl Default for TelegramBot {
         chat_id = msg.chat.id.0
     )
 )]
-async fn answer(bot: teloxide::Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
+async fn command_handler(bot: teloxide::Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
     macro_rules! send_msg {
         ($msg:expr) => {{
             if let Err(err) = bot.send_message(msg.chat.id, $msg.to_string()).await {
-                error!("Failed to send response: {err}");
+                warn!("Failed to send response: {err}");
             } else {
                 info!("Response successfully sent");
             }
@@ -127,5 +129,22 @@ async fn answer(bot: teloxide::Bot, msg: Message, cmd: Command) -> ResponseResul
 
     debug!("Command completed");
 
+    Ok(())
+}
+
+#[instrument(
+    skip_all,
+    fields(
+        user_id = msg.from.as_ref().map(|u| u.id.0).unwrap_or(0),
+        username = msg.from.as_ref().map(|u| u.username.as_ref()).unwrap_or(Some(&"<no_username>".to_string())).unwrap_or(&"<no_username>".to_string()),
+        chat_id = msg.chat.id.0
+    )
+)]
+async fn default_handler(bot: teloxide::Bot, msg: Message) -> ResponseResult<()> {
+    warn!("Unknown command received");
+    if let Err(err) = bot.send_message(msg.chat.id, "Unknown command").await {
+        warn!("Failed to send response: {err}");
+    }
+    debug!("Command completed");
     Ok(())
 }

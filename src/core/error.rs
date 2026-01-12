@@ -58,7 +58,7 @@ macro_rules! error {
         let err = $err;
         let enum_variant = format!("{err:?}");
         let cause = format!($fmt, $($arg,)*);
-        ::tracing::error!("{enum_variant}: {cause}");
+        ::tracing::warn!("{enum_variant}: {cause}");
         err
     }};
 
@@ -66,12 +66,12 @@ macro_rules! error {
         let err = $err;
         let enum_variant = format!("{err:?}");
         let cause = $cause.to_string();
-        ::tracing::error!("{enum_variant}: {cause}");
+        ::tracing::warn!("{enum_variant}: {cause}");
         err
     }};
     ($err:expr $(,)?) => {{
         let err = $err;
-        ::tracing::error!("{err:?}");
+        ::tracing::warn!("{err:?}");
         err
     }};
 }

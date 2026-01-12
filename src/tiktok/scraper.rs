@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use reqwest::{Client, Url, header, redirect};
-use tracing::{debug, info, instrument, warn};
+use tracing::{info, instrument, warn};
 
 use crate::{core::*, tiktok};
 
@@ -10,8 +10,6 @@ impl TikTokScraper {
     #[instrument(skip_all, fields(arg = %arg))]
     async fn get_medias_metadata(arg: String) -> BotResult<MediaMetadata> {
         let tiktok_url = Self::get_tiktok_url(&arg).await?;
-
-        debug!("TikTok url: {tiktok_url}");
 
         let (_, video_id) = tiktok_url
             .path()
@@ -27,7 +25,7 @@ impl TikTokScraper {
         Ok(MediaMetadata::new(MediaKind::Video, media_url))
     }
 
-    async fn get_tiktok_url(arg: &String) -> BotResult<Url> {
+    async fn get_tiktok_url(arg: &str) -> BotResult<Url> {
         let url = Url::parse(arg).map_err(|err| invalid_url!(err))?;
 
         let domain_name = url
@@ -54,7 +52,7 @@ impl TikTokScraper {
     async fn get_tiktok_url_from_redirection(url: &Url) -> BotResult<Url> {
         // TODO: create a BotError variant to replace Unknown
 
-        Self::validate_redirection_url(&url)?;
+        Self::validate_redirection_url(url)?;
 
         let reqwest_client = Client::builder()
             .redirect(redirect::Policy::none())

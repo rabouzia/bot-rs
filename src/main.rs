@@ -17,8 +17,7 @@ async fn main() {
 
     #[cfg(feature = "telegram")]
     {
-        let telegram_bot = TelegramBot::new();
-        jobs.spawn(async move { telegram_bot.run().await });
+        jobs.spawn(TelegramBot::run());
     }
 
     jobs.join_all().await;

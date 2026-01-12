@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use reqwest::Url;
 use serde_json::Value;
-use tracing::{debug, info, instrument, warn};
+use tracing::{info, instrument, warn};
 
 use crate::core::*;
 
@@ -11,8 +11,6 @@ impl TwitterScraper {
     #[instrument(skip_all, fields(arg = %arg))]
     async fn get_medias_metadata(arg: String) -> BotResult<Vec<BotResult<MediaMetadata>>> {
         let url = Url::parse(&arg).map_err(|err| invalid_url!("{err}"))?;
-
-        debug!("Twitter url: {url}");
 
         let scraping_results = {
             let post_id = url
