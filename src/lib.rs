@@ -4,7 +4,7 @@ mod core;
 pub mod telegram;
 
 #[cfg(feature = "twitter")]
-mod twitter;
+pub mod twitter;
 
 pub mod prelude {
     pub use crate::core::error::{BotError, BotResult};
