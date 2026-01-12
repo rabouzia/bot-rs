@@ -10,8 +10,7 @@
             "request": "launch",
             "cargo": {
                 "args": [
-                    "run",
-                    "--bin=telegram"
+                    "run"
                 ]
             },
             "args": []
@@ -22,8 +21,7 @@
             "request": "launch",
             "cargo": {
                 "args": [
-                    "test",
-                    "--bin=telegram"
+                    "test"
                 ]
             }
         }
