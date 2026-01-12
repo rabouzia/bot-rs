@@ -5,7 +5,7 @@ use teloxide::{
     types::{ChatId, InputFile, Message},
 };
 use tokio::task::JoinSet;
-use tracing::{debug, error, info, instrument};
+use tracing::{Instrument, debug, error, info, instrument};
 
 use crate::core::*;
 
@@ -28,12 +28,13 @@ impl TelegramSender {
             match result {
                 Ok(metadata) => {
                     debug!("Processing media item");
-                    jobs.spawn(Self::download_and_send(bot, chat_id, metadata, item_index));
+                    jobs.spawn(Self::download_and_send(bot, chat_id, metadata, item_index).in_current_span());
                 }
 
                 Err(err) => {
                     debug!("Processing error for media item: {err}");
-                    jobs.spawn(async move { bot.send_message(chat_id, err.to_string()).await });
+                    // Request<Payload = SendMessage, Err = Self::Err>
+                    jobs.spawn(bot.send_message(chat_id, err.to_string()).into_future().in_current_span());
                 }
             }
         }

@@ -9,12 +9,16 @@ pub enum MediaKind {
     Video,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct MediaMetadata {
-    pub id: String,
     pub kind: MediaKind,
     pub url: Url,
+}
+
+impl MediaMetadata {
+    pub fn new(kind: MediaKind, url: Url) -> Self {
+        Self { kind, url }
+    }
 }
 
 impl std::fmt::Display for MediaMetadata {

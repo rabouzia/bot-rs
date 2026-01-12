@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use async_trait::async_trait;
 use reqwest::Url;
 use serde_json::Value;
@@ -10,9 +8,9 @@ use crate::core::*;
 pub enum TwitterScraper {}
 
 impl TwitterScraper {
-    #[instrument(skip_all, fields(input = %input))]
-    async fn scrape(input: String) -> BotResult<Vec<BotResult<MediaMetadata>>> {
-        let url = Url::parse(&input).map_err(|err| invalid_url!("{err}"))?;
+    #[instrument(name = "scrape", skip_all, fields(arg = %arg))]
+    async fn scrape_inner(arg: String) -> BotResult<Vec<BotResult<MediaMetadata>>> {
+        let url = Url::parse(&arg).map_err(|err| invalid_url!("{err}"))?;
 
         info!("Starting media scraping");
 
@@ -23,7 +21,7 @@ impl TwitterScraper {
                 .next_back()
                 .ok_or_else(|| invalid_url!("{url}"))?;
 
-            let scraper_url = Self::scraper_link(post_id)?;
+            let scraper_url = Self::media_link(post_id)?;
 
             Self::scrape_medias_inner(&scraper_url).await?
         };
@@ -69,15 +67,7 @@ impl TwitterScraper {
         let url = reqwest::Url::parse(url)
             .map_err(|err| invalid_scraper_response!("invalid url: {err}"))?;
 
-        let id = url
-            .as_str()
-            .rsplit('/')
-            .next()
-            .and_then(|filename: &str| filename.split_once('.').map(|(name, _)| name))
-            .ok_or_else(|| invalid_scraper_response!("invalid url: {}", url))?
-            .to_string();
-
-        Ok(MediaMetadata { id, url, kind })
+        Ok(MediaMetadata::new(kind, url))
     }
 
     async fn scrape_medias_inner(scraper_url: &Url) -> BotResult<Vec<BotResult<MediaMetadata>>> {
@@ -117,10 +107,10 @@ impl TwitterScraper {
         Ok(medias)
     }
 
-    fn scraper_link(post_id: &str) -> Result<reqwest::Url, BotError> {
+    fn media_link(post_id: &str) -> Result<reqwest::Url, BotError> {
         let scraper_link = crate::twitter::config::TWITTER_SCRAPER_LINK;
-        let link = format!("{scraper_link}{post_id}");
-        Url::from_str(&link).map_err(|err| invalid_link!("{link}: {err}"))
+        let media_link = format!("{scraper_link}{post_id}");
+        Url::parse(&media_link).map_err(|err| invalid_link!("{media_link}: {err}"))
     }
 }
 
@@ -128,8 +118,7 @@ impl TwitterScraper {
 impl MediaScraper for TwitterScraper {
     type Input = String;
 
-    #[doc(hidden)]
-    async fn scrape(input: Self::Input) -> BotResult<Vec<BotResult<MediaMetadata>>> {
-        TwitterScraper::scrape(input).await
+    async fn scrape(arg: Self::Input) -> BotResult<Vec<BotResult<MediaMetadata>>> {
+        TwitterScraper::scrape_inner(arg).await
     }
 }

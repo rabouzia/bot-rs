@@ -1,6 +1,8 @@
 use teloxide::{prelude::*, utils::command::BotCommands};
 use tracing::{debug, error, info, instrument};
 
+#[cfg(feature = "tiktok")]
+use crate::tiktok::TikTokScraper;
 use crate::{core::*, telegram::*, twitter::TwitterScraper};
 
 #[derive(BotCommands, Clone)]
@@ -18,13 +20,14 @@ pub(crate) enum Command {
     #[command(aliases = ["t"], hide_aliases)]
     Twitter(String),
 
+    /// Handle a tiktok link
+    #[cfg(feature = "tiktok")]
+    #[command(aliases = ["tk"], hide_aliases)]
+    Tiktok(String),
+
     // /// Handle a insta link
     // #[command(parse_with = "split", alias = "insta")]
     // Instagram,
-
-    // /// Handle a tiktok link
-    // #[command(aliases = ["tk", "tiktok"])]
-    // Tiktok(String),
 }
 
 #[derive(Debug, Clone)]
@@ -57,6 +60,9 @@ impl std::fmt::Display for Command {
 
             #[cfg(feature = "twitter")]
             Self::Twitter(arg) => write!(f, "/twitter {arg}"),
+
+            #[cfg(feature = "tiktok")]
+            Self::Tiktok(arg) => write!(f, "/tiktok {arg}"),
         }
     }
 }
@@ -97,7 +103,10 @@ async fn answer(bot: teloxide::Bot, msg: Message, cmd: Command) -> ResponseResul
 
     let scraping_results: BotResult<Vec<BotResult<MediaMetadata>>> = match cmd {
         #[cfg(feature = "twitter")]
-        Command::Twitter(url) => TwitterScraper::scrape(url).await,
+        Command::Twitter(arg) => TwitterScraper::scrape(arg).await,
+
+        #[cfg(feature = "tiktok")]
+        Command::Tiktok(arg) => TikTokScraper::scrape(arg).await,
 
         _ => return send_msg!(command_not_found!("{cmd}")),
     };
