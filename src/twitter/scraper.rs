@@ -71,12 +71,10 @@ impl TwitterScraper {
             .get("success")
             .and_then(|v: &Value| v.as_bool())
         {
-            let error_msg = response_json
-                .get("error")
-                .map(ToString::to_string)
-                .unwrap_or(BotError::Unknown.to_string());
-
-            return Err(custom!("{error_msg}"));
+            return match response_json.get("error").and_then(|v| v.as_str()) {
+                Some(msg) => Err(custom!("{msg}")),
+                None => Err(unknown!()),
+            }
         }
 
         let data = response_json

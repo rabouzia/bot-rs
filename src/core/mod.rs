@@ -1,4 +1,4 @@
-#![allow(unused)]
+#![allow(unused_imports)]
 
 pub mod error;
 pub mod traits;

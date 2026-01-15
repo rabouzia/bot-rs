@@ -143,25 +143,30 @@ impl TikTokScraper {
     fn validate_redirection_url(url: &Url) -> BotResult<()> {
         let domain = url
             .domain()
-            .ok_or_else(|| invalid_url!("url domain should be vm.tiktok.com or vt.tiktok.com"))?;
+            .ok_or_else(|| invalid_url!("url does not have a domain"))?;
 
-        if domain != "vm.tiktok.com" && domain != "vt.tiktok.com" {
+        if !matches!(domain, "vm.tiktok.com" | "vt.tiktok.com") {
             return Err(invalid_url!(
                 "url domain should be vm.tiktok.com or vt.tiktok.com"
             ));
         }
 
-        let path_segments = url.path().split('/').collect::<Vec<_>>();
-        if path_segments.len() != 1 {
-            return Err(invalid_url!(
-                "url path should look like 'https://vm.tiktok.com/ABC123'"
-            ));
+        let validation_error =
+            || invalid_url!("url path should look like 'https://{domain}/ABC123'");
+
+        let segments = match url.path_segments() {
+            Some(segments) => segments.collect::<Vec<_>>(),
+            None => return Err(validation_error()),
+        };
+
+        if segments.len() != 1 {
+            return Err(validation_error());
         }
 
-        if path_segments[0].len() < 6 || !path_segments[0].chars().all(|c| c.is_alphanumeric()) {
-            return Err(invalid_url!(
-                "url path should look like 'https://vm.tiktok.com/ABC123'"
-            ));
+        let at_least_6 = segments[0].len() >= 6;
+        let is_alphanumeric = segments[0].chars().all(|c| c.is_alphanumeric());
+        if !at_least_6 || !is_alphanumeric {
+            return Err(validation_error());
         }
 
         Ok(())
@@ -179,15 +184,14 @@ impl TikTokScraper {
 impl MediaScraper for TikTokScraper {
     type Input = String;
 
-    #[doc(hidden)]
     async fn get_medias(arg: Self::Input) -> BotResult<Vec<BotResult<MediaMetadata>>> {
-        info!("Starting TikTok media Metadata retrieving");
+        info!("Starting TikTok media metadata retrieving");
 
         let media = TikTokScraper::get_medias_metadata(arg).await;
         if media.is_ok() {
-            info!("TikTok media Metadata retrieving results: 1 total, 1 successfull, 0 failed");
+            info!("TikTok media metadata retrieving results: 1 total, 1 successful, 0 failed");
         } else {
-            warn!("TikTok media Metadata retrieving results: 1 total, 0 successfull, 1 failed");
+            warn!("TikTok media metadata retrieving results: 1 total, 0 successful, 1 failed");
         }
 
         Ok(vec![media])

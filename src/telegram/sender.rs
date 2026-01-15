@@ -41,9 +41,8 @@ impl TelegramSender {
                             .into_future()
                             .in_current_span()
                             .await;
-                        if let Err(err) = result {
+                        if let Err(err) = &result {
                             warn!("Failed to send error message to chat: {err}");
-                            return Err(err);
                         }
 
                         result
@@ -114,7 +113,11 @@ impl TelegramSender {
                 use teloxide::{ApiError, RequestError};
                 let err_msg = match err {
                     // scraper error (most likely invalid url given by user)
-                    RequestError::Api(ApiError::Unknown(_)) => BotError::InvalidUrl,
+                    RequestError::Api(ApiError::Unknown(_)) => {
+                        let mut unknown_err = BotError::Unknown.to_string();
+                        unknown_err.push_str("\nNote: ensure that the URL is valid");
+                        BotError::Custom(unknown_err)
+                    },
 
                     _ => BotError::Unknown,
                 };

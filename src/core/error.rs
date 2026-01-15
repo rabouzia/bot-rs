@@ -41,7 +41,7 @@ impl fmt::Display for BotError {
             }
             BotError::FileTypeNotSupported => "The media format is not currently supported.",
             BotError::InvalidMedia => "The media might be corrupted or in an unrecognized format.",
-            BotError::Unknown => "An unexpected error occured, please retry later...",
+            BotError::Unknown => "An unexpected error occurred, please retry later...",
             BotError::Custom(msg) => msg,
         };
 

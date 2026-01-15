@@ -1,5 +1,5 @@
 use teloxide::{prelude::*, utils::command::BotCommands};
-use tracing::{debug, info, instrument, warn};
+use tracing::{Span, debug, info, instrument, warn};
 
 #[cfg(feature = "tiktok")]
 use crate::tiktok::TikTokScraper;
@@ -77,8 +77,6 @@ impl std::fmt::Display for Command {
 #[instrument(
     skip_all,
     fields(
-        user_id = msg.from.as_ref().map(|u| u.id.0).unwrap_or(0),
-        username = msg.from.as_ref().map(|u| u.username.as_ref()).unwrap_or(Some(&"<no_username>".to_string())).unwrap_or(&"<no_username>".to_string()),
         command = %cmd,
         chat_id = msg.chat.id.0
     )
@@ -95,6 +93,8 @@ async fn command_handler(bot: teloxide::Bot, msg: Message, cmd: Command) -> Resp
             ResponseResult::Ok(())
         }};
     }
+
+    record_user_infos_into_span(&msg);
 
     info!("Received command {cmd}");
 
@@ -146,4 +146,20 @@ async fn default_handler(bot: teloxide::Bot, msg: Message) -> ResponseResult<()>
     }
     debug!("Command completed");
     Ok(())
+}
+
+fn record_user_infos_into_span(msg: &Message) {
+    let user = match msg.from.as_ref() {
+        Some(user) => user,
+        None => return,
+    };
+
+    let span = Span::current();
+
+    let user_id = user.id.0;
+    span.record("user_id", &user_id);
+
+    if let Some(username) = user.username.as_ref() {
+        span.record("username", username);
+    }
 }

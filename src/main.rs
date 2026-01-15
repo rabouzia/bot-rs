@@ -10,7 +10,7 @@ async fn main() {
     dotenvy::dotenv().ok();
 
     // enable tracing logs
-    tracing_subcriber().init();
+    tracing_subscriber().init();
 
     #[allow(unused_mut)]
     let mut jobs: JoinSet<()> = JoinSet::new();
@@ -23,7 +23,7 @@ async fn main() {
     jobs.join_all().await;
 }
 
-fn tracing_subcriber() -> impl SubscriberInitExt {
+fn tracing_subscriber() -> impl SubscriberInitExt {
     let filter_layer = tracing_subscriber::filter::Targets::new()
         // .with_filter(EnvFilter::from_default_env());
         .with_target("media_bot", tracing::Level::DEBUG);
