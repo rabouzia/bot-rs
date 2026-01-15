@@ -1,26 +1,77 @@
 #![allow(unused_macros, unused_imports)]
 use std::fmt;
 
+// --- Structs and Enums ---
+
+#[allow(dead_code)]
+#[derive(Debug)]
+pub enum BotError {
+    CommandNotFound,
+    NoMediaFound,
+    InvalidLink,
+    InvalidUrl,
+    MediaSendFailed,
+    InvalidScraperResponse,
+    FileTypeNotSupported,
+    InvalidMedia,
+    Unknown,
+    Custom(String),
+}
+
+// --- Type Aliases ---
+
+pub type BotResult<T> = Result<T, BotError>;
+
+// --- Trait Impl ---
+
+impl fmt::Display for BotError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let msg = match self {
+            BotError::CommandNotFound => "Command not found.",
+            BotError::NoMediaFound => {
+                "No media items found for this link. The post might be private or not contain any media."
+            }
+            BotError::InvalidLink => "Invalid link.",
+            BotError::InvalidUrl => "Invalid URL.",
+            BotError::MediaSendFailed => {
+                "Failed to send media. The media might be unavailable or the format unsupported."
+            }
+            BotError::InvalidScraperResponse => {
+                "The scraper returned an unexpected response. The link might be invalid or the content might be unavailable."
+            }
+            BotError::FileTypeNotSupported => "The media format is not currently supported.",
+            BotError::InvalidMedia => "The media might be corrupted or in an unrecognized format.",
+            BotError::Unknown => "An unexpected error occurred, please retry later...",
+            BotError::Custom(msg) => msg,
+        };
+
+        write!(f, "{msg}")
+    }
+}
+
+impl std::error::Error for BotError {}
+
 // --- Macros ---
 
 macro_rules! error {
-    ($err:expr, $fmt:expr, $($arg:expr),* $(,)?) => {{
+    ($err:expr, $fmt:literal, $($arg:expr),* $(,)?) => {{
         let err = $err;
         let enum_variant = format!("{err:?}");
         let cause = format!($fmt, $($arg,)*);
-        ::tracing::error!("{enum_variant}: {cause}");
+        ::tracing::warn!("{enum_variant}: {cause}");
         err
     }};
+
     ($err:expr, $cause:expr $(,)?) => {{
         let err = $err;
         let enum_variant = format!("{err:?}");
-        let cause = format!($cause);
-        ::tracing::error!("{enum_variant}: {cause}");
+        let cause = $cause.to_string();
+        ::tracing::warn!("{enum_variant}: {cause}");
         err
     }};
     ($err:expr $(,)?) => {{
         let err = $err;
-        ::tracing::error!("{err:?}");
+        ::tracing::warn!("{err:?}");
         err
     }};
 }
@@ -86,53 +137,3 @@ pub(crate) use invalid_url;
 pub(crate) use media_send_failed;
 pub(crate) use no_media_found;
 pub(crate) use unknown;
-
-// --- Structs and Enums ---
-
-#[allow(dead_code)]
-#[derive(Debug)]
-pub enum BotError {
-    CommandNotFound,
-    NoMediaFound,
-    InvalidLink,
-    InvalidUrl,
-    MediaSendFailed,
-    InvalidScraperResponse,
-    FileTypeNotSupported,
-    InvalidMedia,
-    Unknown,
-    Custom(String),
-}
-
-// --- Type Aliases ---
-
-pub type BotResult<T> = Result<T, BotError>;
-
-// --- Trait Impl ---
-
-impl fmt::Display for BotError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let msg = match self {
-            BotError::CommandNotFound => "Command not found.",
-            BotError::NoMediaFound => {
-                "No media items found for this link. The post might be private or not contain any media."
-            }
-            BotError::InvalidLink => "Invalid link.",
-            BotError::InvalidUrl => "Invalid URL.",
-            BotError::MediaSendFailed => {
-                "Failed to send media. The media might be unavailable or the format unsupported."
-            }
-            BotError::InvalidScraperResponse => {
-                "The scraper returned an unexpected response. The link might be invalid or the content might be unavailable."
-            }
-            BotError::FileTypeNotSupported => "The media format is not currently supported.",
-            BotError::InvalidMedia => "The media might be corrupted or in an unrecognized format.",
-            BotError::Unknown => "An unexpected error occured, please retry later...",
-            BotError::Custom(msg) => msg,
-        };
-
-        write!(f, "{msg}")
-    }
-}
-
-impl std::error::Error for BotError {}

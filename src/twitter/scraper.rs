@@ -1,22 +1,16 @@
-use std::str::FromStr;
-
 use async_trait::async_trait;
 use reqwest::Url;
 use serde_json::Value;
-use tracing::{info, instrument};
+use tracing::{info, instrument, warn};
 
 use crate::core::*;
 
-const X_LINK: &str = "https://www.twitter-viewer.com/api/x/tweet?tweetId=";
-
-pub struct TwitterScraper;
+pub enum TwitterScraper {}
 
 impl TwitterScraper {
-    #[instrument(skip_all, fields(input = %input))]
-    async fn scrape(input: String) -> BotResult<Vec<BotResult<MediaMetadata>>> {
-        let url = Url::parse(&input).map_err(|err| invalid_url!("{err}"))?;
-
-        info!("Starting media scraping");
+    #[instrument(skip_all, fields(arg = %arg))]
+    async fn get_medias_metadata(arg: String) -> BotResult<Vec<BotResult<MediaMetadata>>> {
+        let url = Url::parse(&arg).map_err(|err| invalid_url!("{err}"))?;
 
         let scraping_results = {
             let post_id = url
@@ -25,32 +19,19 @@ impl TwitterScraper {
                 .next_back()
                 .ok_or_else(|| invalid_url!("{url}"))?;
 
-            let scraper_url = Self::scraper_link(post_id)?;
+            let scraper_url = Self::media_link(post_id)?;
 
             Self::scrape_medias_inner(&scraper_url).await?
         };
-
-        info!("media scraping finished");
 
         if scraping_results.is_empty() {
             return Err(no_media_found!());
         }
 
-        // Logging
-        {
-            let total_count = scraping_results.len();
-            let success_count = scraping_results.iter().filter(|r| r.is_ok()).count();
-            let error_count = total_count - success_count;
-
-            info!(
-                "Twitter scraping completed: {} total, {} successful, {} failed",
-                total_count, success_count, error_count
-            );
-        }
-
         Ok(scraping_results)
     }
 
+    #[instrument(name = "media_metadata_parsing", skip_all)]
     fn parse_metadata(item: &Value) -> BotResult<MediaMetadata> {
         let get_index_as_str = |index: &str| -> BotResult<&str> {
             item.get(index)
@@ -71,18 +52,12 @@ impl TwitterScraper {
         let url = reqwest::Url::parse(url)
             .map_err(|err| invalid_scraper_response!("invalid url: {err}"))?;
 
-        let id = url
-            .as_str()
-            .rsplit('/')
-            .next()
-            .and_then(|filename: &str| filename.split_once('.').map(|(name, _)| name))
-            .ok_or_else(|| invalid_scraper_response!("invalid url: {}", url))?
-            .to_string();
-
-        Ok(MediaMetadata { id, url, kind })
+        Ok(MediaMetadata::new(kind, url))
     }
 
     async fn scrape_medias_inner(scraper_url: &Url) -> BotResult<Vec<BotResult<MediaMetadata>>> {
+        info!("Starting medias scraping");
+
         let response = reqwest::get(scraper_url.as_str())
             .await
             .map_err(|err| unknown!("{err}"))?;
@@ -96,12 +71,10 @@ impl TwitterScraper {
             .get("success")
             .and_then(|v: &Value| v.as_bool())
         {
-            let error_msg = response_json
-                .get("error")
-                .and_then(|v| v.as_str())
-                .unwrap_or("unknown error");
-
-            return Err(custom!("{error_msg}"));
+            return match response_json.get("error").and_then(|v| v.as_str()) {
+                Some(msg) => Err(custom!("{msg}")),
+                None => Err(unknown!()),
+            }
         }
 
         let data = response_json
@@ -114,15 +87,16 @@ impl TwitterScraper {
             .as_array()
             .ok_or_else(|| invalid_scraper_response!("invalid field media"))?;
 
-        let medias = json_medias.iter().map(Self::parse_metadata).collect();
+        let medias: Vec<BotResult<MediaMetadata>> =
+            json_medias.iter().map(Self::parse_metadata).collect();
 
         Ok(medias)
     }
 
-    #[instrument]
-    fn scraper_link(post_id: &str) -> Result<reqwest::Url, BotError> {
-        let link = format!("{X_LINK}{post_id}");
-        Url::from_str(&link).map_err(|err| invalid_link!("{link}: {err}"))
+    fn media_link(post_id: &str) -> Result<reqwest::Url, BotError> {
+        let scraper_link = crate::twitter::config::TWITTER_SCRAPER_LINK;
+        let media_link = format!("{scraper_link}{post_id}");
+        Url::parse(&media_link).map_err(|err| invalid_link!("{media_link}: {err}"))
     }
 }
 
@@ -130,8 +104,31 @@ impl TwitterScraper {
 impl MediaScraper for TwitterScraper {
     type Input = String;
 
-    #[doc(hidden)]
-    async fn scrape(input: Self::Input) -> BotResult<Vec<BotResult<MediaMetadata>>> {
-        TwitterScraper::scrape(input).await
+    async fn get_medias(arg: Self::Input) -> BotResult<Vec<BotResult<MediaMetadata>>> {
+        info!("Starting Twitter media metadata retrieving");
+
+        let result = TwitterScraper::get_medias_metadata(arg).await;
+
+        if let Ok(medias) = &result {
+            let total_count = medias.len();
+            let success_count = medias.iter().filter(|r| r.is_ok()).count();
+            let error_count = total_count - success_count;
+
+            if error_count == 0 {
+                info!(
+                    "Medias scraping results: {} total, {} successful, {} failed",
+                    total_count, success_count, error_count
+                );
+            } else {
+                warn!(
+                    "Medias scraping results: {} total, {} successful, {} failed",
+                    total_count, success_count, error_count
+                );
+            }
+        } else {
+            warn!("Media scraping results: failed to retrieve media");
+        }
+
+        result
     }
 }

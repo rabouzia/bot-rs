@@ -6,6 +6,9 @@ pub mod telegram;
 #[cfg(feature = "twitter")]
 pub mod twitter;
 
+#[cfg(feature = "tiktok")]
+pub mod tiktok;
+
 pub mod prelude {
     pub use crate::core::error::{BotError, BotResult};
     pub use crate::core::traits::{MediaScraper, MediaSender};
